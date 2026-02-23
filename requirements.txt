@@ -3,7 +3,6 @@ waitress>=2.1.2
 
 numpy>=2.0.0
 pandas>=2.2.2
-scipy>=1.11.0
 
 yfinance>=0.2.43
 multitasking>=0.0.12

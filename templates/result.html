@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hasil Simulasi — {{ r.ticker_short }}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0d0f1a;--surface:#161929;--surface2:#1e2235;--border:#2a2d40;
+    --blue:#4f9cf9;--blue-dim:rgba(79,156,249,0.1);
+    --green:#22c55e;--green-dim:rgba(34,197,94,0.1);
+    --red:#ef4444;--red-dim:rgba(239,68,68,0.1);
+    --yellow:#f59e0b;--yellow-dim:rgba(245,158,11,0.1);
+    --text:#e2e8f0;--muted:#64748b;--radius:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding:24px;}
+  .container{max-width:1100px;margin:0 auto;}
+  /* Header */
+  .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
+  .back-btn{display:flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:13px;transition:color .2s;}
+  .back-btn:hover{color:var(--blue);}
+  .action-btns{display:flex;gap:8px;}
+  .btn{padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+  .btn-ghost{background:var(--surface);border:1px solid var(--border);color:var(--muted);}
+  .btn-ghost:hover{border-color:var(--blue);color:var(--blue);}
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-primary:hover{opacity:.85;}
+  .btn-detail{background:var(--surface);border:1px solid var(--yellow);color:var(--yellow);}
+  .btn-detail:hover{background:var(--yellow-dim);}
+  /* Hero */
+  .hero-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px 32px;margin-bottom:20px;}
+  .stock-name{display:flex;align-items:baseline;gap:12px;margin-bottom:4px;}
+  .ticker-tag{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:700;color:var(--blue);}
+  .company-name{color:var(--muted);font-size:1rem;}
+  .meta-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
+  .meta-item{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;}
+  .meta-item span{color:var(--text);font-weight:500;}
+  /* Warnings */
+  .warning-box{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:12px 16px;margin-bottom:20px;}
+  .warning-box p{font-size:13px;color:var(--yellow);display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;}
+  .warning-box p:last-child{margin-bottom:0;}
+  /* KPI Row */
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+  .kpi{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;text-align:center;}
+  .kpi .k-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px;font-weight:600;}
+  .kpi .k-val{font-size:1.5rem;font-weight:700;font-family:'DM Mono',monospace;line-height:1;}
+  .kpi .k-sub{font-size:11px;color:var(--muted);margin-top:5px;}
+  .kpi.up{border-bottom:3px solid var(--green);}
+  .kpi.down{border-bottom:3px solid var(--red);}
+  .kpi.warn{border-bottom:3px solid var(--yellow);}
+  .kpi.neutral{border-bottom:3px solid var(--blue);}
+  .k-green{color:var(--green);}
+  .k-red{color:var(--red);}
+  .k-yellow{color:var(--yellow);}
+  .k-blue{color:var(--blue);}
+  /* Chart */
+  .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:20px;}
+  .chart-card img{width:100%;display:block;}
+  .chart-legend{padding:16px 24px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:16px;}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+  .legend-dot{width:10px;height:10px;border-radius:50%;}
+  /* Sections */
+  .sections{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .section-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;}
+  .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+  .stat-row:last-child{border-bottom:none;}
+  .stat-label{font-size:13px;color:var(--muted);}
+  .stat-val{font-size:13px;font-weight:600;font-family:'DM Mono',monospace;}
+  /* Risk Bars */
+  .risk-visual{margin-bottom:20px;}
+  .risk-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .risk-label-col{width:160px;font-size:12px;color:var(--muted);text-align:right;flex-shrink:0;}
+  .risk-bar-wrap{flex:1;background:var(--surface2);border-radius:4px;height:8px;overflow:hidden;}
+  .risk-bar{height:100%;border-radius:4px;transition:width .6s ease;}
+  .risk-val{width:80px;font-size:12px;font-family:'DM Mono',monospace;text-align:left;}
+  /* Percentile band */
+  .pct-band{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;position:relative;overflow:hidden;}
+  .pct-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:16px;}
+  .pct-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0;}
+  .pct-col{text-align:center;padding:12px 4px;}
+  .pct-col.danger{background:rgba(239,68,68,0.08);border-radius:8px 0 0 8px;}
+  .pct-col.safe{background:rgba(34,197,94,0.08);border-radius:0 8px 8px 0;}
+  .pct-num{font-size:11px;color:var(--muted);margin-bottom:4px;}
+  .pct-price{font-size:0.9rem;font-weight:700;font-family:'DM Mono',monospace;}
+  .pct-arrow{font-size:18px;margin-bottom:2px;}
+  /* Interp */
+  .interp-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:20px;}
+  .interp-card h3{font-size:14px;font-weight:700;margin-bottom:14px;}
+  .interp-item{display:flex;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+  .interp-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+  .interp-icon{font-size:1.2rem;flex-shrink:0;margin-top:2px;}
+  .interp-text{font-size:13px;color:var(--muted);line-height:1.6;}
+  .interp-text strong{color:var(--text);}
+  /* Disclaimer */
+  .disclaimer{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius);padding:14px 18px;font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
+  /* ===== PRINT ===== */
+  @media print {
+    body{background:white;color:#1e293b;padding:0;}
+    .no-print{display:none!important;}
+    .top-bar,.action-btns,.back-btn{display:none!important;}
+    .surface,.surface2,.section-card,.hero-card,.interp-card,.pct-band,.chart-card{
+      background:white!important;border:1px solid #e2e8f0!important;
+    }
+    .stat-label,.section-title,.k-label,.pct-num,.meta-item,.interp-text,.legend-item,
+    .muted,.risk-label-col{color:#64748b!important;}
+    .stat-val,.k-val,.pct-price{color:#1e293b!important;}
+    .k-green{color:#16a34a!important;}
+    .k-red{color:#dc2626!important;}
+    .k-yellow{color:#d97706!important;}
+    .k-blue{color:#2563eb!important;}
+    .ticker-tag{color:#2563eb!important;}
+    .company-name{color:#64748b!important;}
+    .kpi{border-bottom-width:2px!important;}
+    .kpi.up{border-bottom-color:#16a34a!important;}
+    .kpi.down{border-bottom-color:#dc2626!important;}
+    .kpi.warn{border-bottom-color:#d97706!important;}
+    .kpi.neutral{border-bottom-color:#2563eb!important;}
+    img.dark-chart{display:none!important;}
+    img.light-chart{display:block!important;}
+    .print-header{display:block!important;}
+  }
+  img.light-chart{display:none;}
+  .print-header{display:none;text-align:center;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e2e8f0;}
+  .print-header h2{font-size:1.4rem;color:#1e293b;}
+  .print-header p{font-size:12px;color:#64748b;margin-top:4px;}
+  @media(max-width:700px){
+    .kpi-row{grid-template-columns:1fr 1fr;}
+    .sections{grid-template-columns:1fr;}
+    .pct-grid{grid-template-columns:repeat(3,1fr);}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Print Header -->
+  <div class="print-header">
+    <h2>Laporan Simulasi Monte Carlo — {{ r.ticker }}</h2>
+    <p>{{ r.company_name }} | Data: {{ r.start_date }} s/d {{ r.end_date }} | {{ r.simulations | int }} Simulasi | {{ r.days }} Hari Prediksi</p>
+  </div>
+
+  <!-- Top Bar -->
+  <div class="top-bar no-print">
+    <a href="/" class="back-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Simulasi Baru
+    </a>
+    <div class="action-btns">
+      <a href="/calculation?data={{ r.calc_details | urlencode }}" class="btn btn-detail" target="_blank">
+        🧮 Detail Perhitungan
+      </a>
+      <button onclick="window.print()" class="btn btn-ghost">
+        🖨️ Cetak / PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero-card">
+    <div class="stock-name">
+      <div class="ticker-tag">{{ r.ticker }}</div>
+      <div class="company-name">{{ r.company_name }}</div>
+    </div>
+    <div class="meta-row">
+      <div class="meta-item">📅 Data <span>{{ r.start_date }} – {{ r.end_date }}</span></div>
+      <div class="meta-item">📊 <span>{{ r.trading_days }} hari trading</span></div>
+      <div class="meta-item">🔄 <span>{{ r.simulations | int }} simulasi</span></div>
+      <div class="meta-item">🎯 Horizon <span>{{ r.days }} hari</span></div>
+      {% if r.sector != '-' %}
+      <div class="meta-item">🏭 <span>{{ r.sector }}</span></div>
+      {% endif %}
+    </div>
+
+    {% if r.warnings %}
+    <div class="warning-box">
+      {% for w in r.warnings %}
+      <p>⚠️ {{ w }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      <div class="kpi neutral">
+        <div class="k-label">Harga Sekarang</div>
+        <div class="k-val k-blue">{{ r.last_price }}</div>
+        <div class="k-sub">per {{ r.end_date }}</div>
+      </div>
+      <div class="kpi up">
+        <div class="k-label">Prob. Naik</div>
+        <div class="k-val k-green">{{ r.prob_up }}</div>
+        <div class="k-sub">dari {{ r.simulations | int }} simulasi</div>
+      </div>
+      <div class="kpi down">
+        <div class="k-label">Prob. Turun</div>
+        <div class="k-val k-red">{{ r.prob_down }}</div>
+        <div class="k-sub">dari {{ r.simulations | int }} simulasi</div>
+      </div>
+      <div class="kpi warn">
+        <div class="k-label">VaR 95% (Rugi Maks)</div>
+        <div class="k-val k-yellow">{{ r.var_95_abs }}</div>
+        <div class="k-sub">{{ r.var_95_pct }} dari investasi</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-card">
+    <img class="dark-chart" src="data:image/png;base64,{{ r.plot_url }}" alt="Chart">
+    <img class="light-chart" src="data:image/png;base64,{{ r.print_url }}" alt="Chart Print">
+    <div class="chart-legend no-print">
+      <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div> P95 Skenario Terbaik</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div> Rata-rata Prediksi</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div> P5 Skenario Terburuk</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(79,156,249,0.5);width:20px;border-radius:2px;"></div> Rentang 50% & 90%</div>
+    </div>
+  </div>
+
+  <!-- Percentile Band -->
+  <div class="pct-band">
+    <div class="pct-title">📊 Spektrum Kemungkinan Harga Akhir ({{ r.days }} Hari)</div>
+    <div class="pct-grid">
+      <div class="pct-col danger">
+        <div class="pct-arrow">🔴</div>
+        <div class="pct-num">P5 — Skenario Sangat Buruk</div>
+        <div class="pct-price k-red">{{ r.q5_price }}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">{{ r.downside_pct }} dari sekarang</div>
+      </div>
+      <div class="pct-col">
+        <div class="pct-arrow">🟠</div>
+        <div class="pct-num">P25 — Kuartil Bawah</div>
+        <div class="pct-price" style="color:#fb923c;">{{ r.q25_price }}</div>
+      </div>
+      <div class="pct-col">
+        <div class="pct-arrow">⚪</div>
+        <div class="pct-num">Median / P50</div>
+        <div class="pct-price">{{ r.median_price }}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Titik tengah semua simulasi</div>
+      </div>
+      <div class="pct-col">
+        <div class="pct-arrow">🟡</div>
+        <div class="pct-num">P75 — Kuartil Atas</div>
+        <div class="pct-price" style="color:#facc15;">{{ r.q75_price }}</div>
+      </div>
+      <div class="pct-col safe">
+        <div class="pct-arrow">🟢</div>
+        <div class="pct-num">P95 — Skenario Sangat Baik</div>
+        <div class="pct-price k-green">{{ r.q95_price }}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">{{ r.upside_pct }} dari sekarang</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats + Risk -->
+  <div class="sections">
+    <div class="section-card">
+      <div class="section-title">📈 Statistik Harga Prediksi</div>
+      <div class="stat-row"><span class="stat-label">Rata-rata (Mean)</span><span class="stat-val k-yellow">{{ r.mean_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">Nilai Tengah (Median)</span><span class="stat-val">{{ r.median_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">Standar Deviasi</span><span class="stat-val">{{ r.std_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">Minimum (terburuk)</span><span class="stat-val k-red">{{ r.min_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">Maximum (terbaik)</span><span class="stat-val k-green">{{ r.max_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">Expected Return</span><span class="stat-val k-yellow">{{ r.expected_return }}</span></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">⚠️ Analisis Risiko (VaR)</div>
+      <div class="stat-row"><span class="stat-label">VaR 95% (nominal)</span><span class="stat-val k-red">{{ r.var_95_abs }}</span></div>
+      <div class="stat-row"><span class="stat-label">VaR 95% (%)</span><span class="stat-val k-red">-{{ r.var_95_pct }}</span></div>
+      <div class="stat-row"><span class="stat-label">VaR 99% (nominal)</span><span class="stat-val k-red">{{ r.var_99_abs }}</span></div>
+      <div class="stat-row"><span class="stat-label">VaR 99% (%)</span><span class="stat-val k-red">-{{ r.var_99_pct }}</span></div>
+      <div class="stat-row"><span class="stat-label">Volatilitas (σ) Tahunan</span><span class="stat-val k-blue">{{ r.sigma_annual }}</span></div>
+      <div class="stat-row"><span class="stat-label">Return (μ) Tahunan</span><span class="stat-val k-blue">{{ r.mu_annual }}</span></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📊 Parameter GBM Historis</div>
+      <div class="stat-row"><span class="stat-label">μ harian (rata-rata return)</span><span class="stat-val">{{ r.mu_daily }}</span></div>
+      <div class="stat-row"><span class="stat-label">σ harian (volatilitas)</span><span class="stat-val">{{ r.sigma_daily }}</span></div>
+      <div class="stat-row"><span class="stat-label">μ tahunan</span><span class="stat-val">{{ r.mu_annual }}</span></div>
+      <div class="stat-row"><span class="stat-label">σ tahunan</span><span class="stat-val">{{ r.sigma_annual }}</span></div>
+      <div class="stat-row"><span class="stat-label">Jumlah data historis</span><span class="stat-val">{{ r.trading_days }} hari</span></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🎯 Probabilitas Detail</div>
+      <div class="stat-row"><span class="stat-label">Prob. harga naik</span><span class="stat-val k-green">{{ r.prob_up }}</span></div>
+      <div class="stat-row"><span class="stat-label">Prob. harga turun</span><span class="stat-val k-red">{{ r.prob_down }}</span></div>
+      <div class="stat-row"><span class="stat-label">P95 (skenario terbaik)</span><span class="stat-val k-green">{{ r.q95_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">P5 (skenario terburuk)</span><span class="stat-val k-red">{{ r.q5_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">Potensi Upside P95</span><span class="stat-val k-green">{{ r.upside_pct }}</span></div>
+      <div class="stat-row"><span class="stat-label">Risiko Downside P5</span><span class="stat-val k-red">{{ r.downside_pct }}</span></div>
+    </div>
+  </div>
+
+  <!-- Interpretation -->
+  <div class="interp-card">
+    <h3>📝 Cara Membaca Hasil Ini</h3>
+    <div class="interp-item">
+      <div class="interp-icon">📈</div>
+      <div class="interp-text">
+        <strong>Grafik Jalur Simulasi (kiri atas):</strong> Setiap garis tipis = 1 simulasi pergerakan harga selama {{ r.days }} hari. Area biru muda = 50% kemungkinan harga berada di sini. Area biru gelap = 90% kemungkinan. Garis <strong style="color:#22c55e;">hijau</strong> = P95 (skenario terbaik 5%). Garis <strong style="color:#ef4444;">merah</strong> = P5 (skenario terburuk 5%). Garis <strong style="color:#f59e0b;">kuning</strong> = rata-rata semua simulasi.
+      </div>
+    </div>
+    <div class="interp-item">
+      <div class="interp-icon">📊</div>
+      <div class="interp-text">
+        <strong>Distribusi Harga Akhir (kiri bawah):</strong> Histogram menunjukkan seberapa sering setiap harga muncul di akhir {{ r.days }} hari. Kolom <strong style="color:#ef4444;">merah</strong> = zona risiko (5% simulasi terburuk, di bawah P5). Kolom <strong style="color:#22c55e;">hijau</strong> = zona upside (5% simulasi terbaik, di atas P95). Kolom <strong style="color:#4f9cf9;">biru</strong> = area normal (90% simulasi).
+      </div>
+    </div>
+    <div class="interp-item">
+      <div class="interp-icon">⚠️</div>
+      <div class="interp-text">
+        <strong>Value at Risk (VaR) 95% = {{ r.var_95_abs }} ({{ r.var_95_pct }}):</strong>
+        Artinya, dengan keyakinan 95%, kerugian Anda dalam {{ r.days }} hari ke depan <em>tidak akan melebihi</em> angka ini. Ada 5% kemungkinan kerugian melebihi jumlah tersebut (skenario sangat ekstrem).
+      </div>
+    </div>
+    <div class="interp-item">
+      <div class="interp-icon">🎯</div>
+      <div class="interp-text">
+        <strong>Probabilitas Naik {{ r.prob_up }} / Turun {{ r.prob_down }}:</strong>
+        Dihitung dari berapa persen simulasi yang berakhir di atas / bawah harga sekarang ({{ r.last_price }}). Ini bukan jaminan — ini probabilitas berdasarkan pola historis.
+      </div>
+    </div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    ⚠️ <strong>Disclaimer:</strong> Hasil simulasi ini adalah estimasi probabilistik berdasarkan data historis dan asumsi Geometric Brownian Motion (GBM). Model ini TIDAK memperhitungkan kejadian luar biasa (black swan), perubahan fundamental perusahaan, kebijakan moneter mendadak, atau sentimen pasar. Gunakan sebagai alat bantu analisis, BUKAN satu-satunya dasar keputusan investasi. Selalu lakukan analisis fundamental dan konsultasikan dengan profesional keuangan.
+  </div>
+</div>
+</body>
+</html>

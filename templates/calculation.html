@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detail Perhitungan Monte Carlo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0d0f1a;--surface:#161929;--surface2:#1e2235;--border:#2a2d40;
+    --blue:#4f9cf9;--blue-dim:rgba(79,156,249,0.12);
+    --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--purple:#a855f7;
+    --text:#e2e8f0;--muted:#64748b;--radius:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding:32px 24px;}
+  .container{max-width:860px;margin:0 auto;}
+  .back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:13px;margin-bottom:28px;transition:color .2s;}
+  .back-btn:hover{color:var(--blue);}
+  .page-title{font-size:2rem;font-weight:700;margin-bottom:8px;}
+  .page-title span{color:var(--blue);}
+  .page-sub{color:var(--muted);font-size:14px;margin-bottom:36px;line-height:1.6;}
+  /* Steps */
+  .step{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;}
+  .step-num{position:absolute;top:-12px;left:24px;background:var(--blue);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;letter-spacing:.05em;}
+  .step-title{font-size:1.1rem;font-weight:700;margin-bottom:10px;margin-top:4px;}
+  .step-desc{color:var(--muted);font-size:13.5px;line-height:1.7;margin-bottom:18px;}
+  /* Formula Box */
+  .formula-box{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:8px;padding:16px 20px;margin:14px 0;font-family:'DM Mono',monospace;font-size:14px;line-height:1.8;overflow-x:auto;}
+  .formula-box .comment{color:var(--muted);font-size:12px;}
+  /* Calc table */
+  .calc-table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px;}
+  .calc-table th{text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border);font-weight:600;}
+  .calc-table td{padding:10px 14px;border-bottom:1px solid rgba(42,45,64,0.5);}
+  .calc-table td:last-child{font-family:'DM Mono',monospace;color:var(--blue);}
+  .calc-table tr:last-child td{border-bottom:none;}
+  /* Highlight */
+  .hl-blue{color:var(--blue);font-weight:600;}
+  .hl-green{color:var(--green);font-weight:600;}
+  .hl-red{color:var(--red);font-weight:600;}
+  .hl-yellow{color:var(--yellow);font-weight:600;}
+  .hl-purple{color:var(--purple);font-weight:600;}
+  /* Note */
+  .note{background:rgba(79,156,249,0.08);border:1px solid rgba(79,156,249,0.2);border-radius:8px;padding:12px 16px;font-size:12.5px;color:var(--muted);margin-top:14px;line-height:1.6;}
+  .note strong{color:var(--blue);}
+  .warn-note{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:12px 16px;font-size:12.5px;color:var(--muted);margin-top:14px;line-height:1.6;}
+  .warn-note strong{color:var(--yellow);}
+  /* Visual path example */
+  .path-example{display:flex;align-items:center;gap:8px;margin:14px 0;flex-wrap:wrap;}
+  .path-cell{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;text-align:center;min-width:90px;}
+  .path-cell .pc-label{font-size:10px;color:var(--muted);margin-bottom:3px;}
+  .path-cell .pc-val{font-size:13px;font-weight:600;font-family:'DM Mono',monospace;}
+  .path-arrow{color:var(--muted);font-size:16px;}
+  /* Summary */
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
+  .sum-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+  .sum-box .sb-label{font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.05em;margin-bottom:6px;font-weight:600;}
+  .sum-box .sb-val{font-size:1.1rem;font-weight:700;font-family:'DM Mono',monospace;}
+  /* Manual calc CTA */
+  .cta-card{background:linear-gradient(135deg,rgba(79,156,249,0.1),rgba(168,85,247,0.1));border:1px solid rgba(79,156,249,0.2);border-radius:16px;padding:28px;text-align:center;margin-top:28px;}
+  .cta-card h3{font-size:1.1rem;font-weight:700;margin-bottom:8px;}
+  .cta-card p{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:18px;}
+  .cta-btn{display:inline-flex;align-items:center;gap:8px;background:var(--blue);color:#fff;padding:11px 22px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;transition:opacity .2s;}
+  .cta-btn:hover{opacity:.85;}
+  .glossary{margin-top:28px;}
+  .glossary-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px;}
+  .glossary-item{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);}
+  .glossary-item:last-child{border-bottom:none;}
+  .g-term{font-family:'DM Mono',monospace;font-size:13px;color:var(--blue);min-width:100px;flex-shrink:0;font-weight:500;}
+  .g-def{font-size:13px;color:var(--muted);line-height:1.5;}
+  @media(max-width:580px){.summary-grid{grid-template-columns:1fr;}.path-example{flex-direction:column;}}
+  @media print{
+    body{background:white;color:#1e293b;}
+    .step,.note,.warn-note,.formula-box,.path-cell,.sum-box,.cta-card{background:white;border-color:#e2e8f0;}
+    .hl-blue{color:#2563eb;}.hl-green{color:#16a34a;}.hl-red{color:#dc2626;}.hl-yellow{color:#d97706;}
+    .muted,.step-desc,.g-def,.comment,.path-cell .pc-label,.calc-table th{color:#64748b;}
+    .back-btn{display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    Kembali ke Simulasi
+  </a>
+
+  <div class="page-title">Detail <span>Perhitungan</span> Monte Carlo</div>
+  <p class="page-sub">
+    Panduan lengkap langkah demi langkah tentang bagaimana simulasi Monte Carlo untuk harga saham dihitung.
+    Gunakan ini untuk memverifikasi atau menghitung ulang sendiri.
+  </p>
+
+  <!-- STEP 1 -->
+  <div class="step">
+    <div class="step-num">LANGKAH 1</div>
+    <div class="step-title">Hitung Log Return Harian</div>
+    <p class="step-desc">
+      Pertama, kita menghitung <strong>logarithmic return harian</strong> dari data harga historis.
+      Log return digunakan (bukan arithmetic return) karena log return bersifat additive dan lebih cocok untuk pemodelan finansial.
+    </p>
+    <div class="formula-box">
+      r<sub>t</sub> = ln(P<sub>t</sub> / P<sub>t-1</sub>)<br>
+      <span class="comment"># r_t = log return hari ke-t</span><br>
+      <span class="comment"># P_t = harga penutupan hari ke-t</span><br>
+      <span class="comment"># P_{t-1} = harga penutupan hari sebelumnya</span>
+    </div>
+    <p class="step-desc">Contoh: Jika harga kemarin Rp8.000 dan hari ini Rp8.200:</p>
+    <div class="formula-box">
+      r = ln(8200 / 8000) = ln(1.025) = <span class="hl-green">0.02469</span> = <span class="hl-green">+2.469%</span>
+    </div>
+    <div class="note">
+      <strong>Catatan:</strong> Kita mengumpulkan semua log return harian selama periode historis yang dipilih (misal 3 tahun = ~756 data return).
+      Dari kumpulan ini kita hitung statistiknya.
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step">
+    <div class="step-num">LANGKAH 2</div>
+    <div class="step-title">Hitung Parameter Statistik</div>
+    <p class="step-desc">
+      Dari semua log return harian, kita hitung dua parameter utama: <strong>rata-rata (μ)</strong> dan <strong>standar deviasi (σ)</strong>.
+      Kemudian disetahunkan menggunakan konvensi <strong>252 hari trading per tahun</strong>.
+    </p>
+    <div class="formula-box">
+      μ_daily = rata-rata(r₁, r₂, ..., rₙ)<br>
+      σ_daily = std_deviasi(r₁, r₂, ..., rₙ)<br><br>
+      <span class="comment"># Setahunkan:</span><br>
+      μ_annual = μ_daily × <span class="hl-blue">252</span><br>
+      σ_annual = σ_daily × √<span class="hl-blue">252</span>
+    </div>
+    <div class="note">
+      <strong>Mengapa 252?</strong> Bursa saham rata-rata buka 252 hari dalam setahun (365 hari dikurangi weekend, libur nasional, dan libur bursa).
+      1 bulan ≈ 21 hari trading. 1 kuartal ≈ 63 hari trading.
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step">
+    <div class="step-num">LANGKAH 3</div>
+    <div class="step-title">Koreksi Drift Geometric Brownian Motion (GBM)</div>
+    <p class="step-desc">
+      Simulasi Monte Carlo untuk harga saham menggunakan model <strong>Geometric Brownian Motion (GBM)</strong>.
+      Model ini memerlukan <em>koreksi Itô</em> pada drift rate untuk menghindari bias ke atas.
+    </p>
+    <div class="formula-box">
+      <span class="comment"># Drift yang dikompensasi (Itô Correction):</span><br>
+      μ_adj = μ_annual - (σ_annual² / 2)<br><br>
+      <span class="comment"># Dalam bentuk harian:</span><br>
+      μ_adj_daily = μ_adj / 252
+    </div>
+    <p class="step-desc" style="margin-top:14px;">
+      Koreksi ini penting: tanpa koreksi, rata-rata log price akan drift ke atas secara artifisial karena Jensen's inequality.
+    </p>
+    <div class="warn-note">
+      <strong>Mengapa ada koreksi σ²/2?</strong> Ini adalah koreksi matematis karena harga bergerak secara eksponensial (multiplicative),
+      bukan linear (additive). Tanpa koreksi ini, E[S_T] akan overestimated.
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step">
+    <div class="step-num">LANGKAH 4</div>
+    <div class="step-title">Rumus Simulasi Satu Hari</div>
+    <p class="step-desc">
+      Untuk setiap hari dalam simulasi, harga esok dihitung dari harga hari ini menggunakan rumus GBM diskrit:
+    </p>
+    <div class="formula-box">
+      S<sub>t+1</sub> = S<sub>t</sub> × exp( μ_adj_daily + σ_daily × ε )<br><br>
+      <span class="comment"># S_t      = harga hari ini</span><br>
+      <span class="comment"># S_{t+1}  = harga hari esok</span><br>
+      <span class="comment"># μ_adj_daily = drift harian yang sudah dikoreksi</span><br>
+      <span class="comment"># σ_daily  = volatilitas harian</span><br>
+      <span class="comment"># ε        = angka acak dari distribusi normal standar N(0,1)</span>
+    </div>
+    <p class="step-desc" style="margin-top:14px;">
+      Angka acak ε (epsilon) inilah yang membuat setiap simulasi berbeda — mewakili "kejutan" pasar yang tidak bisa diprediksi.
+    </p>
+    <div class="note">
+      <strong>Contoh satu langkah:</strong> Misal S₀ = Rp9.800, μ_adj_daily = 0.000198, σ_daily = 0.0185, ε = 1.23<br><br>
+      S₁ = 9800 × exp(0.000198 + 0.0185 × 1.23)<br>
+      S₁ = 9800 × exp(0.02296)<br>
+      S₁ = 9800 × 1.02323<br>
+      S₁ = <strong class="hl-green">Rp10.027</strong>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="step">
+    <div class="step-num">LANGKAH 5</div>
+    <div class="step-title">Bangun Jalur Harga (Price Path)</div>
+    <p class="step-desc">
+      Langkah 4 diulang sebanyak <strong>N hari</strong> prediksi untuk membentuk satu "jalur harga".
+      Setiap simulasi menghasilkan jalur berbeda karena nilai ε selalu berbeda (acak).
+    </p>
+    <div class="path-example">
+      <div class="path-cell"><div class="pc-label">Hari 0 (Sekarang)</div><div class="pc-val">S₀</div></div>
+      <div class="path-arrow">→</div>
+      <div class="path-cell"><div class="pc-label">Hari 1 (ε₁)</div><div class="pc-val">S₁</div></div>
+      <div class="path-arrow">→</div>
+      <div class="path-cell"><div class="pc-label">Hari 2 (ε₂)</div><div class="pc-val">S₂</div></div>
+      <div class="path-arrow">→</div>
+      <div class="path-cell"><div class="pc-label">...</div><div class="pc-val">...</div></div>
+      <div class="path-arrow">→</div>
+      <div class="path-cell"><div class="pc-label">Hari N (εₙ)</div><div class="pc-val">Sₙ</div></div>
+    </div>
+    <p class="step-desc">
+      Proses ini diulang <strong>ribuan kali</strong> (misal 1.000× atau 5.000×). Hasil akhir: ribuan kemungkinan harga pada hari ke-N.
+    </p>
+    <div class="formula-box">
+      <span class="comment"># Implementasi vektorisasi (efisien):</span><br>
+      ε_matrix = normal_random(shape=(n_simulations, n_days))<br>
+      log_returns = μ_adj_daily + σ_daily × ε_matrix<br>
+      log_paths   = cumsum(log_returns, axis=1)<br>
+      price_paths = S₀ × exp(log_paths)
+    </div>
+  </div>
+
+  <!-- STEP 6 -->
+  <div class="step">
+    <div class="step-num">LANGKAH 6</div>
+    <div class="step-title">Hitung Statistik dari Distribusi Hasil</div>
+    <p class="step-desc">
+      Ambil kolom terakhir (harga pada hari ke-N) dari semua simulasi.
+      Dari distribusi harga akhir ini, hitung semua statistik berikut:
+    </p>
+    <table class="calc-table">
+      <tr><th>Statistik</th><th>Rumus</th><th>Arti</th></tr>
+      <tr><td>Mean</td><td>avg(S_N)</td><td>Rata-rata harga prediksi</td></tr>
+      <tr><td>Median / P50</td><td>percentile(S_N, 50%)</td><td>Nilai tengah semua simulasi</td></tr>
+      <tr><td>P5</td><td>percentile(S_N, 5%)</td><td>Skenario terburuk 5%</td></tr>
+      <tr><td>P95</td><td>percentile(S_N, 95%)</td><td>Skenario terbaik 5%</td></tr>
+      <tr><td>VaR 95%</td><td>S₀ − P5</td><td>Kerugian maksimal probabilitas 95%</td></tr>
+      <tr><td>VaR 95% (%)</td><td>(S₀ − P5) / S₀</td><td>Persen kerugian maksimal</td></tr>
+      <tr><td>Prob. Naik</td><td>count(S_N > S₀) / total</td><td>% simulasi yang berakhir di atas harga kini</td></tr>
+    </table>
+  </div>
+
+  <!-- STEP 7 -->
+  <div class="step">
+    <div class="step-num">LANGKAH 7</div>
+    <div class="step-title">Memahami Keterbatasan Model</div>
+    <p class="step-desc">
+      GBM adalah model yang baik untuk simulasi probabilistik, namun memiliki keterbatasan yang perlu dipahami:
+    </p>
+    <table class="calc-table">
+      <tr><th>Asumsi GBM</th><th>Realitas Pasar</th></tr>
+      <tr><td>Return berdistribusi normal</td><td>Return memiliki ekor lebih tebal (fat tail)</td></tr>
+      <tr><td>Volatilitas konstan</td><td>Volatilitas berubah seiring waktu (volatility clustering)</td></tr>
+      <tr><td>Tidak ada lompatan harga</td><td>Ada crash/rally tiba-tiba (jump diffusion)</td></tr>
+      <tr><td>Pasar efisien sempurna</td><td>Ada momentum, mean reversion, dll.</td></tr>
+      <tr><td>Parameter historis stabil</td><td>μ dan σ berubah seiring kondisi ekonomi</td></tr>
+    </table>
+    <div class="warn-note">
+      <strong>Implikasi:</strong> GBM cenderung meremehkan probabilitas kejadian ekstrem. VaR dari model ini adalah perkiraan bawah.
+      Untuk risk management profesional, gunakan metode lanjutan seperti GARCH, Regime Switching, atau Historical Simulation.
+    </div>
+  </div>
+
+  <!-- Verification Manual -->
+  <div class="step">
+    <div class="step-num">VERIFIKASI</div>
+    <div class="step-title">Cara Menghitung Ulang Secara Manual (Excel/Python)</div>
+    <p class="step-desc">Ikuti langkah ini di Excel atau Python untuk memverifikasi atau menghitung ulang:</p>
+    <div class="formula-box">
+<span class="comment"># Python — Verifikasi Manual</span><br>
+import numpy as np, yfinance as yf<br><br>
+<span class="comment"># 1. Ambil data</span><br>
+df = yf.download('BBCA.JK', period='3y')['Close']<br><br>
+<span class="comment"># 2. Log returns</span><br>
+r = np.log(df / df.shift(1)).dropna()<br><br>
+<span class="comment"># 3. Parameter</span><br>
+mu_d = r.mean()           <span class="comment"># μ harian</span><br>
+sig_d = r.std()           <span class="comment"># σ harian</span><br>
+mu_d_adj = mu_d - 0.5*sig_d**2  <span class="comment"># drift terkoreksi</span><br><br>
+<span class="comment"># 4. Simulasi (1000 jalur, 30 hari)</span><br>
+S0 = float(df.iloc[-1])  <span class="comment"># harga terakhir</span><br>
+eps = np.random.randn(1000, 30)<br>
+log_r = mu_d_adj + sig_d * eps<br>
+paths = S0 * np.exp(np.cumsum(log_r, axis=1))<br><br>
+<span class="comment"># 5. Statistik</span><br>
+final = paths[:, -1]<br>
+print(f"Mean: {np.mean(final):,.0f}")<br>
+print(f"P5:   {np.percentile(final, 5):,.0f}")<br>
+print(f"P95:  {np.percentile(final, 95):,.0f}")<br>
+print(f"VaR95:{S0 - np.percentile(final,5):,.0f}")<br>
+print(f"Prob Naik: {np.mean(final>S0)*100:.1f}%")
+    </div>
+    <div class="note">
+      <strong>Di Excel:</strong> Kolom A = hari (1 s/d N). Kolom B = formula: =B1*EXP(mu_adj + sigma * NORMINV(RAND(),0,1)).
+      Salin ke banyak kolom untuk banyak simulasi. Hitung PERCENTILE dan AVERAGE dari nilai akhir.
+    </div>
+  </div>
+
+  <!-- Glossary -->
+  <div class="glossary">
+    <div class="glossary-title">Glosarium Istilah</div>
+    <div class="glossary-item"><div class="g-term">GBM</div><div class="g-def">Geometric Brownian Motion — model matematis pergerakan harga aset yang paling umum digunakan dalam keuangan.</div></div>
+    <div class="glossary-item"><div class="g-term">μ (mu)</div><div class="g-def">Drift rate — rata-rata return yang diharapkan. Mencerminkan tren jangka panjang harga saham.</div></div>
+    <div class="glossary-item"><div class="g-term">σ (sigma)</div><div class="g-def">Volatilitas — standar deviasi return. Semakin besar σ, semakin lebar rentang kemungkinan harga.</div></div>
+    <div class="glossary-item"><div class="g-term">ε (epsilon)</div><div class="g-def">Angka acak dari distribusi normal standar N(0,1). Mewakili "kejutan" harian yang tidak dapat diprediksi.</div></div>
+    <div class="glossary-item"><div class="g-term">VaR 95%</div><div class="g-def">Value at Risk 95% — kerugian maksimal yang tidak akan terlampaui dengan probabilitas 95%. Ada 5% kemungkinan rugi lebih dari ini.</div></div>
+    <div class="glossary-item"><div class="g-term">P5 / P95</div><div class="g-def">Persentil ke-5 dan ke-95 dari distribusi harga akhir. P5 = 5% terburuk. P95 = 5% terbaik.</div></div>
+    <div class="glossary-item"><div class="g-term">Log Return</div><div class="g-def">Logarithmic return = ln(P_t/P_{t-1}). Lebih cocok daripada arithmetic return untuk pemodelan karena bersifat additive dan simetrik.</div></div>
+    <div class="glossary-item"><div class="g-term">Itô Correction</div><div class="g-def">Koreksi matematis -σ²/2 pada drift, diperlukan karena GBM bersifat eksponensial (lemma Itô dari kalkulus stokastik).</div></div>
+    <div class="glossary-item"><div class="g-term">252</div><div class="g-def">Jumlah hari trading per tahun. Standar industri keuangan global. 1 bulan ≈ 21 hari. 1 kuartal ≈ 63 hari.</div></div>
+  </div>
+
+  <div class="cta-card" style="margin-top:28px;">
+    <h3>Siap Jalankan Simulasi?</h3>
+    <p>Gunakan pemahaman di atas untuk menginterpretasikan hasil simulasi dengan lebih baik. Jika ada perbedaan angka, pastikan seed random, data historis, dan parameter yang digunakan sama.</p>
+    <a href="/" class="cta-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Mulai Simulasi Baru
+    </a>
+  </div>
+</div>
+</body>
+</html>

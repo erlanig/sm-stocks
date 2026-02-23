@@ -15,7 +15,6 @@ import base64
 import warnings
 import os
 import json
-from scipy import stats as scipy_stats
 
 warnings.filterwarnings('ignore')
 
@@ -39,6 +38,17 @@ US_POPULAR = {
     'AAPL','MSFT','GOOGL','AMZN','META','TSLA','NVDA','NFLX','AMD','INTC',
     'JPM','BAC','V','MA','DIS','UBER','ABNB','PLTR','COIN','RBLX','SHOP'
 }
+
+def calc_skew_kurtosis(x):
+    x = np.asarray(x)
+    mean = x.mean()
+    std = x.std()
+    if std == 0:
+        return 0.0, 0.0
+
+    skew = np.mean(((x - mean) / std) ** 3)
+    kurt = np.mean(((x - mean) / std) ** 4) - 3  # excess kurtosis
+    return float(skew), float(kurt)
 
 def normalize_ticker(raw):
     t = raw.strip().upper()
@@ -115,8 +125,7 @@ def run_monte_carlo(prices, days, simulations):
     final_prices = price_paths[:, -1]
 
     # Skewness & Kurtosis for context
-    skew = float(scipy_stats.skew(returns))
-    kurt = float(scipy_stats.kurtosis(returns))
+    skew, kurt = calc_skew_kurtosis(returns.values)
 
     stats = {
         'last_price': last_price,
@@ -590,32 +599,146 @@ def simulate():
 
         pf = lambda v: price_fmt(v, ticker)
 
+        # ── Build comprehensive calc_details with REAL numbers ──
+        prices_arr = stock_data['prices']
+        returns_real = calc_log_returns(prices_arr)
+
+        # Step 1: actual sample price pairs and their log returns
+        sample_prices = prices_arr.iloc[-6:].values.tolist()   # last 6 closing prices
+        sample_dates  = [str(d.date()) for d in prices_arr.index[-6:]]
+        sample_lr     = returns_real.values[-5:].tolist()       # last 5 log returns
+
+        # Step 2: annualisation numbers
+        mu_d   = stats['mu_daily']
+        sig_d  = stats['sigma_daily']
+        mu_a   = stats['mu_annual']
+        sig_a  = stats['sigma_annual']
+        mu_adj = stats['mu_adj_annual']
+        mu_adj_d = mu_adj / TRADING_DAYS_PER_YEAR
+
+        # Step 3: Itô correction breakdown
+        ito_half_var = 0.5 * sig_a ** 2
+
+        # Step 4: one-step worked example — use fixed eps=1.0 so it's reproducible
+        eps_example = 1.0
+        log_ret_example = mu_adj_d + sig_d * eps_example
+        price_day1 = stats['last_price'] * np.exp(log_ret_example)
+
+        # Also a negative epsilon example
+        eps_neg = -1.0
+        log_ret_neg = mu_adj_d + sig_d * eps_neg
+        price_day1_neg = stats['last_price'] * np.exp(log_ret_neg)
+
+        # Step 5: first 3 days of simulation path 0 for illustration
+        np.random.seed(42)
+        eps_path0 = np.random.standard_normal(min(days, 5))
+        path0_prices = [stats['last_price']]
+        for ep in eps_path0:
+            path0_prices.append(path0_prices[-1] * np.exp(mu_adj_d + sig_d * ep))
+
+        # Step 6: output statistics
+        final_arr = np.array(paths_display['final_prices'])
+        q1_val  = float(np.percentile(final_arr, 1))
+        q5_val  = stats['q5']
+        q95_val = stats['q95']
+
+        # VaR derivation chain
+        var95_abs = stats['var_95_abs']
+        var95_pct = stats['var_95_pct']
+        var99_abs = stats['var_99_abs']
+        var99_pct = stats['var_99_pct']
+
+        # Prob up count
+        n_up   = int(round(stats['prob_up'] / 100 * simulations))
+        n_down = simulations - n_up
+
+        # Black Swan extras
+        bs_lambda_daily = 0.0
+        bs_k = 0.0
+        bs_mu_star = 0.0
+        if use_blackswan:
+            bs_lambda_daily = jump_intensity / TRADING_DAYS_PER_YEAR
+            bs_k = np.exp(jump_mean + 0.5 * jump_std**2) - 1
+            bs_mu_star = mu_adj_d - jump_intensity / TRADING_DAYS_PER_YEAR * bs_k
+
         calc_details = {
+            # Identity
             'ticker': ticker,
-            'last_price': stats['last_price'],
-            'last_price_fmt': pf(stats['last_price']),
-            'mu_daily': stats['mu_daily'],
-            'sigma_daily': stats['sigma_daily'],
-            'mu_annual': stats['mu_annual'],
-            'sigma_annual': stats['sigma_annual'],
-            'mu_adj_annual': stats['mu_adj_annual'],
-            'n_returns': stats['n_returns'],
-            'days': days,
-            'simulations': simulations,
+            'company_name': stock_data['company_name'],
+            'mode': mode,
             'is_idr': is_indonesian(ticker),
             'currency': 'Rp' if is_indonesian(ticker) else '$',
-            'mode': mode,
+            'years': years,
+            'days': days,
+            'simulations': simulations,
+            'start_date': stock_data['start_date'],
+            'end_date': stock_data['end_date'],
+
+            # Step 1 – raw prices & log returns
+            'last_price': stats['last_price'],
+            'last_price_fmt': pf(stats['last_price']),
+            'sample_dates': sample_dates,
+            'sample_prices': [round(p, 2) for p in sample_prices],
+            'sample_lr': [round(r, 6) for r in sample_lr],
+            'n_returns': stats['n_returns'],
+
+            # Step 2 – parameter estimation
+            'mu_daily': mu_d,
+            'sigma_daily': sig_d,
+            'mu_annual': mu_a,
+            'sigma_annual': sig_a,
             'skewness': stats.get('skewness', 0),
             'kurtosis': stats.get('kurtosis', 0),
+
+            # Step 3 – Itô correction
+            'ito_half_var': ito_half_var,
+            'mu_adj_annual': mu_adj,
+            'mu_adj_daily': mu_adj_d,
+
+            # Step 4 – one-step formula
+            'eps_example': eps_example,
+            'log_ret_example': log_ret_example,
+            'price_day1': price_day1,
+            'price_day1_pct': (price_day1 / stats['last_price'] - 1) * 100,
+            'eps_neg': eps_neg,
+            'log_ret_neg': log_ret_neg,
+            'price_day1_neg': price_day1_neg,
+            'price_day1_neg_pct': (price_day1_neg / stats['last_price'] - 1) * 100,
+
+            # Step 5 – path illustration (seed=42, first 5 steps)
+            'eps_path0': [round(e, 4) for e in eps_path0.tolist()],
+            'path0_prices': [round(p, 2) for p in path0_prices],
+
+            # Step 6 – final statistics
+            'mean': stats['mean'],
+            'median': stats['median'],
+            'std_dev': stats['std'],
+            'min_price': stats['min'],
+            'max_price': stats['max'],
+            'q1': q1_val,
+            'q5': q5_val,
+            'q25': stats['q25'],
+            'q75': stats['q75'],
+            'q95': q95_val,
+            'var95_abs': var95_abs,
+            'var95_pct': var95_pct,
+            'var99_abs': var99_abs,
+            'var99_pct': var99_pct,
+            'prob_up': stats['prob_up'],
+            'prob_down': stats['prob_down'],
+            'n_up': n_up,
+            'n_down': n_down,
+
+            # Black Swan extras
+            'jump_intensity': jump_intensity if use_blackswan else None,
+            'jump_mean': jump_mean if use_blackswan else None,
+            'jump_std': jump_std if use_blackswan else None,
+            'pct_with_jumps': stats.get('pct_with_jumps', 0) if use_blackswan else None,
+            'avg_jumps_per_sim': stats.get('avg_jumps_per_sim', 0) if use_blackswan else None,
+            'bs_lambda_daily': bs_lambda_daily,
+            'bs_k': bs_k,
+            'bs_mu_star': bs_mu_star,
         }
-        if use_blackswan:
-            calc_details.update({
-                'jump_intensity': stats.get('jump_intensity', jump_intensity),
-                'jump_mean': stats.get('jump_mean', jump_mean),
-                'jump_std': stats.get('jump_std', jump_std),
-                'pct_with_jumps': stats.get('pct_with_jumps', 0),
-                'avg_jumps_per_sim': stats.get('avg_jumps_per_sim', 0),
-            })
 
         result = {
             'ticker': ticker,

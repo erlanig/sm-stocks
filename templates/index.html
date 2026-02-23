@@ -3,257 +3,1039 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simulasi Monte Carlo Saham</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Permodelan Simulasi — Analisis Risiko Saham</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0d0f1a;
-    --surface: #161929;
-    --surface2: #1e2235;
-    --border: #2a2d40;
-    --blue: #4f9cf9;
-    --blue-dim: rgba(79,156,249,0.12);
-    --green: #22c55e;
-    --red: #ef4444;
-    --yellow: #f59e0b;
-    --text: #e2e8f0;
-    --muted: #64748b;
-    --radius: 12px;
+    --bg: #F5F4F0;
+    --surface: #FFFFFF;
+    --surface2: #F0EFE9;
+    --border: #E0DED6;
+    --border-strong: #C8C5BB;
+    --blue: #1D4ED8;
+    --blue-soft: #EEF2FF;
+    --green: #15803D;
+    --red: #B91C1C;
+    --amber: #B45309;
+    --text: #1C1917;
+    --muted: #78716C;
+    --light: #A8A29E;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
   }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
+    font-family: 'IBM Plex Sans', sans-serif;
+    line-height: 1.6;
+  }
+
+  /* ─── HEADER ─── */
+  .site-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .site-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Lora', serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--text);
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
   }
-  .page { width: 100%; max-width: 680px; }
-  .hero { text-align: center; margin-bottom: 36px; }
-  .logo {
-    display: inline-flex; align-items: center; gap: 10px;
-    background: var(--blue-dim); border: 1px solid rgba(79,156,249,0.3);
-    padding: 6px 14px; border-radius: 99px; font-size: 13px; color: var(--blue);
-    margin-bottom: 24px;
+  .logo-icon svg { color: white; }
+  .header-nav {
+    display: flex;
+    gap: 4px;
+    align-items: center;
   }
-  .logo-dot { width: 8px; height: 8px; background: var(--blue); border-radius: 50%; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-  h1 { font-size: 2.4rem; font-weight: 700; line-height: 1.15; margin-bottom: 10px; }
-  h1 span { color: var(--blue); }
-  .subtitle { color: var(--muted); font-size: 1rem; }
-  .card {
+  .nav-link {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .nav-link:hover { background: var(--surface2); color: var(--text); }
+
+  /* ─── HERO ─── */
+  .hero {
+    padding: 72px 48px 56px;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+  }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--blue-soft);
+    color: var(--blue);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 99px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(29,78,216,0.15);
+  }
+  .hero h1 {
+    font-family: 'Lora', serif;
+    font-size: 2.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 18px;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--blue);
+  }
+  .hero-desc {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.75;
+    margin-bottom: 28px;
+  }
+  .hero-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .badge svg { flex-shrink: 0; }
+
+  /* ─── FORM CARD ─── */
+  .form-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 18px;
+    border-radius: 16px;
     padding: 32px;
-    margin-bottom: 16px;
+    box-shadow: var(--shadow-lg);
   }
-  .field-group { margin-bottom: 24px; }
+  .form-card-title {
+    font-family: 'Lora', serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: var(--text);
+  }
+
   .field-label {
-    display: block; font-size: 13px; font-weight: 600;
-    color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;
-    margin-bottom: 8px;
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 7px;
   }
+  .field-group { margin-bottom: 20px; }
+
+  /* Ticker Input */
   .ticker-wrap { position: relative; }
-  .ticker-wrap input {
+  .ticker-input {
     width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 500;
+    padding: 13px 130px 13px 16px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .ticker-input::placeholder {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.95rem;
+    letter-spacing: 0;
+    font-weight: 400;
+    color: var(--light);
+  }
+  .ticker-input:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(29,78,216,0.08);
+    background: var(--surface);
+  }
+  .ticker-exchange-badge {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--blue-soft);
+    color: var(--blue);
+    border: 1px solid rgba(29,78,216,0.2);
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .ticker-hint {
+    font-size: 12px;
+    color: var(--light);
+    margin-top: 6px;
+  }
+  .chips {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 9px;
+    align-items: center;
+  }
+  .chip-label {
+    font-size: 11px;
+    color: var(--light);
+    font-weight: 500;
+  }
+  .chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 3px 9px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover {
+    background: var(--blue-soft);
+    border-color: rgba(29,78,216,0.3);
+    color: var(--blue);
+  }
+
+  /* Param grid */
+  .param-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .param-box {
     background: var(--surface2);
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 1.5rem;
-    font-weight: 500;
-    padding: 14px 140px 14px 20px;
-    outline: none;
+    padding: 14px 15px;
     transition: border-color 0.2s;
-    letter-spacing: 0.05em;
+  }
+  .param-box:focus-within {
+    border-color: var(--blue);
+    background: var(--surface);
+  }
+  .param-box .p-label {
+    font-size: 10.5px;
+    font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 5px;
   }
-  .ticker-wrap input::placeholder { font-size: 1rem; letter-spacing: 0; font-weight: 400; color: #3a3f55; font-family: 'DM Sans', sans-serif; }
-  .ticker-wrap input:focus { border-color: var(--blue); }
-  .ticker-badge {
-    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-    background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(79,156,249,0.3);
-    border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600;
-    pointer-events: none;
+  .param-box input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 1.25rem;
+    font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace;
   }
-  .ticker-hint { font-size: 12px; color: var(--muted); margin-top: 7px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .chip {
-    background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); font-size: 12px; font-weight: 500;
-    padding: 4px 10px; border-radius: 6px; cursor: pointer;
-    font-family: 'DM Mono', monospace; transition: all 0.15s;
+  .param-box .p-sub {
+    font-size: 10px;
+    color: var(--light);
+    margin-top: 3px;
   }
-  .chip:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
-  .chip-label { font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--muted); align-self: center; margin-right: 2px; }
-  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-  .field-box { background: var(--surface2); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
-  .field-box:focus-within { border-color: var(--blue); }
-  .field-box .lbl { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
-  .field-box .sub { font-size: 10px; color: #3a3f55; margin-top: 4px; }
-  .field-box input {
-    width: 100%; background: transparent; border: none; outline: none;
-    color: var(--text); font-size: 1.3rem; font-weight: 600; font-family: 'DM Mono', monospace;
+  .param-box .p-hint {
+    font-size: 10.5px;
+    color: var(--blue);
+    margin-top: 3px;
+    font-weight: 500;
   }
-  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { opacity: 0; }
-  .range-row { display: flex; gap: 8px; margin-top: 8px; }
-  .range-btn {
-    flex: 1; background: var(--surface2); border: 1px solid var(--border);
-    color: var(--muted); font-size: 11px; font-family: 'DM Sans', sans-serif;
-    border-radius: 6px; padding: 4px 0; cursor: pointer; transition: all 0.15s; text-align: center;
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { opacity: 0; }
+
+  .preset-row {
+    display: flex;
+    gap: 5px;
+    margin-top: 7px;
   }
-  .range-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
-  .days-hint { font-size: 11px; color: #4f9cf9; margin-top: 5px; }
-  .btn-run {
-    width: 100%; background: var(--blue); color: #fff;
-    border: none; border-radius: var(--radius); font-family: 'DM Sans', sans-serif;
-    font-size: 1rem; font-weight: 700; padding: 16px; cursor: pointer;
-    transition: opacity 0.2s, transform 0.15s; letter-spacing: 0.01em;
-    display: flex; align-items: center; justify-content: center; gap: 10px;
+  .preset-btn {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 0;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    font-family: 'IBM Plex Sans', sans-serif;
   }
-  .btn-run:hover { opacity: 0.88; transform: translateY(-1px); }
-  .btn-run:active { transform: translateY(0); }
-  .loading-state { display: none; flex-direction: column; align-items: center; gap: 10px; padding: 10px 0; }
+  .preset-btn:hover {
+    border-color: var(--blue);
+    color: var(--blue);
+    background: var(--blue-soft);
+  }
+
+  /* Black Swan Toggle */
+  .blackswan-section {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .blackswan-section.active {
+    border-color: var(--red);
+  }
+  .blackswan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--surface);
+    transition: background 0.15s;
+  }
+  .blackswan-header:hover { background: var(--surface2); }
+  .blackswan-header.active-header { background: #FEF2F2; }
+  .bs-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .bs-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .blackswan-section.active .bs-icon { background: #FEE2E2; }
+  .bs-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .bs-subtitle {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+  .toggle-switch {
+    width: 44px;
+    height: 24px;
+    background: var(--border);
+    border-radius: 99px;
+    position: relative;
+    transition: background 0.2s;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .toggle-switch.on { background: var(--red); }
+  .toggle-knob {
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    transition: left 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle-switch.on .toggle-knob { left: 23px; }
+
+  .bs-params {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+    background: #FEF9F9;
+    display: none;
+  }
+  .bs-params.show { display: block; }
+  .bs-params-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .bs-param-box {
+    background: white;
+    border: 1px solid #FECACA;
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .bs-param-box .bsp-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--red); letter-spacing: 0.05em; margin-bottom: 4px; }
+  .bs-param-box input {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text);
+    background: transparent;
+  }
+  .bs-param-box .bsp-sub { font-size: 10px; color: var(--light); margin-top: 2px; }
+  .bs-explain {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    background: white;
+    border: 1px solid #FECACA;
+    border-radius: 6px;
+    padding: 10px 14px;
+  }
+  .bs-explain strong { color: var(--red); }
+
+  /* Submit button */
+  .btn-simulate {
+    width: 100%;
+    background: var(--text);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 15px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    letter-spacing: 0.01em;
+  }
+  .btn-simulate:hover {
+    background: #292524;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .btn-simulate:active { transform: translateY(0); }
+  .btn-simulate.bs-mode { background: var(--red); }
+  .btn-simulate.bs-mode:hover { background: #991B1B; }
+
+  .loading-box {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+  }
   .spinner {
-    width: 28px; height: 28px; border: 3px solid var(--border);
-    border-top-color: var(--blue); border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    width: 26px; height: 26px;
+    border: 2.5px solid var(--border);
+    border-top-color: var(--text);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .info-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .info-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 16px;
+
+  /* ─── THEORY SECTION ─── */
+  .theory-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 48px 72px;
   }
-  .info-card h4 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-  .info-card p { font-size: 12px; color: var(--muted); line-height: 1.6; }
-  .info-card.blue { border-top: 2px solid var(--blue); }
-  .info-card.green { border-top: 2px solid var(--green); }
-  .info-card.red { border-top: 2px solid var(--red); }
-  .info-card.yellow { border-top: 2px solid var(--yellow); }
-  .calc-link {
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    color: var(--muted); font-size: 12px; text-decoration: none;
-    margin-top: 16px; transition: color 0.2s;
+  .theory-header {
+    text-align: center;
+    margin-bottom: 48px;
   }
-  .calc-link:hover { color: var(--blue); }
-  @media (max-width: 560px) {
-    .grid3 { grid-template-columns: 1fr; }
-    .info-cards { grid-template-columns: 1fr; }
-    h1 { font-size: 1.7rem; }
+  .section-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--blue);
+    background: var(--blue-soft);
+    border: 1px solid rgba(29,78,216,0.15);
+    padding: 4px 12px;
+    border-radius: 99px;
+    margin-bottom: 16px;
+  }
+  .theory-header h2 {
+    font-family: 'Lora', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .theory-header p {
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 580px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  .theory-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  .theory-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    position: relative;
+  }
+  .theory-card.full { grid-column: 1 / -1; }
+  .theory-card .tc-number {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    font-size: 48px;
+    font-weight: 800;
+    font-family: 'Lora', serif;
+    color: var(--border);
+    line-height: 1;
+    user-select: none;
+  }
+  .theory-card h3 {
+    font-family: 'Lora', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .theory-card p {
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.75;
+  }
+  .theory-card .formula-inline {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--blue);
+    border-radius: 5px;
+    padding: 10px 14px;
+    margin-top: 14px;
+    display: block;
+    line-height: 1.8;
+    color: var(--text);
+  }
+  .theory-card .formula-inline .comment {
+    color: var(--light);
+    font-size: 11.5px;
+  }
+
+  /* Black Swan theory card */
+  .bs-theory-card {
+    background: var(--surface);
+    border: 1.5px solid #FECACA;
+    border-radius: 12px;
+    padding: 28px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+  .bs-theory-card h3 {
+    font-family: 'Lora', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--red);
+    margin-bottom: 10px;
+  }
+  .bs-theory-card p {
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.75;
+  }
+  .bs-theory-compare {
+    background: #FEF2F2;
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .bs-compare-row {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #FECACA;
+    font-size: 13px;
+  }
+  .bs-compare-row:last-child { border-bottom: none; }
+  .bs-compare-row .col-a { width: 40%; color: var(--blue); font-weight: 600; }
+  .bs-compare-row .col-vs { width: 10%; color: var(--light); text-align: center; font-size: 11px; }
+  .bs-compare-row .col-b { width: 50%; color: var(--red); font-weight: 600; }
+
+  /* Disclaimer strip */
+  .disclaimer-strip {
+    background: #FFFBEB;
+    border-top: 1px solid #FDE68A;
+    border-bottom: 1px solid #FDE68A;
+    padding: 16px 48px;
+    font-size: 12.5px;
+    color: var(--amber);
+    line-height: 1.7;
+  }
+  .disclaimer-strip strong { font-weight: 700; }
+
+  /* Footer */
+  .site-footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 24px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--light);
+  }
+  .footer-link {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .footer-link:hover { color: var(--blue); }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; gap: 32px; padding: 40px 24px; }
+    .theory-section { padding: 0 24px 48px; }
+    .theory-grid { grid-template-columns: 1fr; }
+    .bs-theory-card { grid-template-columns: 1fr; }
+    .param-grid { grid-template-columns: 1fr; }
+    .site-header { padding: 0 24px; }
+    .disclaimer-strip { padding: 16px 24px; }
+    .site-footer { padding: 20px 24px; flex-direction: column; gap: 8px; text-align: center; }
   }
 </style>
 </head>
 <body>
-<div class="page">
-  <div class="hero">
-    <div class="logo"><div class="logo-dot"></div> Monte Carlo Simulator</div>
-    <h1>Prediksi Harga <span>Saham</span></h1>
-    <p class="subtitle">Simulasi ribuan skenario pergerakan harga secara statistik</p>
-  </div>
 
-  <div class="card">
-    <form id="form" action="/simulate" method="POST" onsubmit="onSubmit()">
-      <!-- Ticker -->
-      <div class="field-group">
-        <label class="field-label">Kode Saham</label>
-        <div class="ticker-wrap">
-          <input type="text" name="ticker" id="ticker" placeholder="Tulis kode saham..."
-                 autocomplete="off" spellcheck="false" required>
-          <div class="ticker-badge" id="exBadge">AUTO</div>
-        </div>
-        <p class="ticker-hint" id="tickerHint">Ketik kode — sistem otomatis mengenali IDX (.JK) atau US</p>
-        <div class="chips" style="margin-top:10px;">
-          <span class="chip-label">IDX:</span>
-          <span class="chip" onclick="setTicker('BBCA')">BBCA</span>
-          <span class="chip" onclick="setTicker('BBRI')">BBRI</span>
-          <span class="chip" onclick="setTicker('BMRI')">BMRI</span>
-          <span class="chip" onclick="setTicker('TLKM')">TLKM</span>
-          <span class="chip" onclick="setTicker('GOTO')">GOTO</span>
-          <span class="chip" onclick="setTicker('ASII')">ASII</span>
-          <span class="chip-label" style="margin-left:6px;">US:</span>
-          <span class="chip" onclick="setTicker('AAPL')">AAPL</span>
-          <span class="chip" onclick="setTicker('MSFT')">MSFT</span>
-          <span class="chip" onclick="setTicker('NVDA')">NVDA</span>
-          <span class="chip" onclick="setTicker('TSLA')">TSLA</span>
-        </div>
-      </div>
-
-      <!-- Params -->
-      <div class="grid3" style="margin-bottom:24px;">
-        <div class="field-box">
-          <div class="lbl">Hari Prediksi</div>
-          <input type="number" name="days" id="days" value="30" min="1" max="504" oninput="updateDayHint()">
-          <div class="days-hint" id="dayHint">≈ 1 bulan trading</div>
-          <div class="range-row">
-            <button type="button" class="range-btn" onclick="setDays(30)">1 bln</button>
-            <button type="button" class="range-btn" onclick="setDays(63)">3 bln</button>
-            <button type="button" class="range-btn" onclick="setDays(126)">6 bln</button>
-            <button type="button" class="range-btn" onclick="setDays(252)">1 thn</button>
-          </div>
-        </div>
-        <div class="field-box">
-          <div class="lbl">Jumlah Simulasi</div>
-          <input type="number" name="simulations" id="sims" value="1000" min="100" max="10000">
-          <div class="sub">min 100 · maks 10.000</div>
-          <div class="range-row">
-            <button type="button" class="range-btn" onclick="setSims(500)">500</button>
-            <button type="button" class="range-btn" onclick="setSims(1000)">1K</button>
-            <button type="button" class="range-btn" onclick="setSims(5000)">5K</button>
-          </div>
-        </div>
-        <div class="field-box">
-          <div class="lbl">Data Historis</div>
-          <input type="number" name="years" id="years" value="3" min="1" max="10">
-          <div class="sub">tahun ke belakang</div>
-          <div class="range-row">
-            <button type="button" class="range-btn" onclick="setYears(1)">1 thn</button>
-            <button type="button" class="range-btn" onclick="setYears(3)">3 thn</button>
-            <button type="button" class="range-btn" onclick="setYears(5)">5 thn</button>
-          </div>
-        </div>
-      </div>
-
-      <button type="submit" class="btn-run" id="btnRun">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Jalankan Simulasi
-      </button>
-      <div class="loading-state" id="loading">
-        <div class="spinner"></div>
-        <span style="color:var(--muted);font-size:13px;">Mengambil data & menjalankan simulasi...</span>
-      </div>
-    </form>
-  </div>
-
-  <div class="info-cards">
-    <div class="info-card blue">
-      <h4>📈 Monte Carlo</h4>
-      <p>Ribuan jalur harga acak berdasarkan volatilitas historis. Hasilnya adalah distribusi probabilitas harga masa depan.</p>
+<!-- HEADER -->
+<header class="site-header">
+  <a href="/" class="site-logo">
+    <div class="logo-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
     </div>
-    <div class="info-card red">
-      <h4>⚠️ Value at Risk</h4>
-      <p>VaR 95% = kerugian maksimal yang mungkin terjadi dengan probabilitas 95%. Ukuran standar manajemen risiko.</p>
-    </div>
-    <div class="info-card green">
-      <h4>📊 Percentile</h4>
-      <p>P5 = skenario terburuk 5% simulasi. P95 = skenario terbaik. 90% skenario ada di antara keduanya.</p>
-    </div>
-    <div class="info-card yellow">
-      <h4>📅 Hari Trading</h4>
-      <p>1 tahun = 252 hari trading (hari bursa). 1 bulan ≈ 21 hari. Gunakan tombol preset di atas.</p>
-    </div>
-  </div>
-
-  <a href="/calculation" class="calc-link">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    Lihat detail rumus & cara perhitungan Monte Carlo
+    Permodelan Simulasi
   </a>
+  <nav class="header-nav">
+    <a href="/calculation" class="nav-link">Detail Perhitungan</a>
+    <a href="#theory" class="nav-link">Teori</a>
+  </nav>
+</header>
+
+<!-- HERO + FORM -->
+<section style="padding: 0 0 0;">
+  <div class="hero">
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Alat Analisis Risiko Statistik
+      </div>
+      <h1>Ukur Risiko Saham dengan <em>Simulasi Monte Carlo</em></h1>
+      <p class="hero-desc">
+        Ribuan skenario dijalankan secara statistik untuk membentuk distribusi kemungkinan harga masa depan.
+        Ini bukan prediksi — ini adalah peta risiko berbasis data historis.
+      </p>
+      <div class="hero-badges">
+        <div class="badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Berbasis GBM
+        </div>
+        <div class="badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Jump Diffusion (Black Swan)
+        </div>
+        <div class="badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+          IDX & US Market
+        </div>
+        <div class="badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/><path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/><path d="M9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5z"/><path d="M3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z"/><path d="M14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5z"/><path d="M15.5 9H14V7.5"/><path d="M10 9.5c0 .83-.67 1.5-1.5 1.5H3c-.83 0-1.5-.67-1.5-1.5S2.17 8 3 8h5.5c.83 0 1.5.67 1.5 1.5z"/><path d="M8.5 15H10v1.5"/></svg>
+          VaR & Percentile
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM -->
+    <div class="form-card">
+      <div class="form-card-title">Jalankan Simulasi</div>
+      <form id="mainForm" action="/simulate" method="POST" onsubmit="handleSubmit()">
+        <input type="hidden" name="blackswan" id="bsInput" value="false">
+
+        <!-- Ticker -->
+        <div class="field-group">
+          <label class="field-label">Kode Saham</label>
+          <div class="ticker-wrap">
+            <input type="text" name="ticker" id="ticker" class="ticker-input"
+                   placeholder="Contoh: BBCA atau AAPL"
+                   autocomplete="off" spellcheck="false" required>
+            <div class="ticker-exchange-badge" id="exBadge">AUTO</div>
+          </div>
+          <div class="ticker-hint" id="tickerHint">Ketik kode — sistem otomatis mengenali IDX (.JK) atau pasar AS</div>
+          <div class="chips">
+            <span class="chip-label">IDX:</span>
+            <span class="chip" onclick="setTicker('BBCA')">BBCA</span>
+            <span class="chip" onclick="setTicker('BBRI')">BBRI</span>
+            <span class="chip" onclick="setTicker('BMRI')">BMRI</span>
+            <span class="chip" onclick="setTicker('TLKM')">TLKM</span>
+            <span class="chip" onclick="setTicker('GOTO')">GOTO</span>
+            <span class="chip-label" style="margin-left:4px;">US:</span>
+            <span class="chip" onclick="setTicker('AAPL')">AAPL</span>
+            <span class="chip" onclick="setTicker('MSFT')">MSFT</span>
+            <span class="chip" onclick="setTicker('NVDA')">NVDA</span>
+            <span class="chip" onclick="setTicker('TSLA')">TSLA</span>
+          </div>
+        </div>
+
+        <!-- Params -->
+        <div class="param-grid">
+          <div class="param-box">
+            <div class="p-label">Hari Prediksi</div>
+            <input type="number" name="days" id="days" value="30" min="1" max="504" oninput="updateDayHint()">
+            <div class="p-hint" id="dayHint">≈ 1 bulan trading</div>
+            <div class="preset-row">
+              <button type="button" class="preset-btn" onclick="setDays(21)">1 bln</button>
+              <button type="button" class="preset-btn" onclick="setDays(63)">3 bln</button>
+              <button type="button" class="preset-btn" onclick="setDays(126)">6 bln</button>
+              <button type="button" class="preset-btn" onclick="setDays(252)">1 thn</button>
+            </div>
+          </div>
+          <div class="param-box">
+            <div class="p-label">Jumlah Simulasi</div>
+            <input type="number" name="simulations" id="sims" value="1000" min="100" max="10000">
+            <div class="p-sub">min 100 · maks 10.000</div>
+            <div class="preset-row">
+              <button type="button" class="preset-btn" onclick="setSims(500)">500</button>
+              <button type="button" class="preset-btn" onclick="setSims(1000)">1K</button>
+              <button type="button" class="preset-btn" onclick="setSims(5000)">5K</button>
+            </div>
+          </div>
+          <div class="param-box">
+            <div class="p-label">Data Historis</div>
+            <input type="number" name="years" id="years" value="3" min="1" max="10">
+            <div class="p-sub">tahun ke belakang</div>
+            <div class="preset-row">
+              <button type="button" class="preset-btn" onclick="setYears(1)">1 thn</button>
+              <button type="button" class="preset-btn" onclick="setYears(3)">3 thn</button>
+              <button type="button" class="preset-btn" onclick="setYears(5)">5 thn</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Black Swan Toggle -->
+        <div class="blackswan-section" id="bsSection">
+          <div class="blackswan-header" id="bsHeader" onclick="toggleBS()">
+            <div class="bs-left">
+              <div class="bs-icon" id="bsIconBox">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="bsIcon">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <div>
+                <div class="bs-title">Algoritma Black Swan</div>
+                <div class="bs-subtitle">Merton Jump Diffusion — model lompatan harga ekstrem</div>
+              </div>
+            </div>
+            <div class="toggle-switch" id="bsToggle">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+          <div class="bs-params" id="bsParams">
+            <div class="bs-params-grid">
+              <div class="bs-param-box">
+                <div class="bsp-label">Intensitas Lompatan (λ)</div>
+                <input type="number" name="jump_intensity" id="jIntensity" value="2.0" step="0.5" min="0.5" max="10">
+                <div class="bsp-sub">kejadian per tahun</div>
+              </div>
+              <div class="bs-param-box">
+                <div class="bsp-label">Rata-rata Magnitude (%)</div>
+                <input type="number" name="jump_mean_input" id="jMeanInput" value="-15" step="1" min="-50" max="50">
+                <input type="hidden" name="jump_mean" id="jMean" value="-0.15">
+                <div class="bsp-sub">negatif = crash, positif = rally</div>
+              </div>
+              <div class="bs-param-box">
+                <div class="bsp-label">Dispersi Lompatan (%)</div>
+                <input type="number" name="jump_std_input" id="jStdInput" value="20" step="1" min="5" max="50">
+                <input type="hidden" name="jump_std" id="jStd" value="0.20">
+                <div class="bsp-sub">standar deviasi lompatan</div>
+              </div>
+            </div>
+            <div class="bs-explain">
+              <strong>Apa yang berbeda?</strong> Model standar (GBM) mengasumsikan harga bergerak mulus. Black Swan menambahkan
+              <em>lompatan diskontinu</em> yang mewakili crash mendadak atau rally ekstrem. Seperti perbedaan
+              antara cuaca normal dan badai yang tidak terduga — model ini menghitung
+              <em>kemungkinan badai</em> meskipun belum pernah tercatat sebelumnya.
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn-simulate" id="btnRun">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Jalankan Simulasi
+        </button>
+        <div class="loading-box" id="loadingBox">
+          <div class="spinner"></div>
+          <span style="color:var(--muted);font-size:13px;">Mengambil data & menjalankan simulasi...</span>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- DISCLAIMER STRIP -->
+<div class="disclaimer-strip">
+  <strong>Perhatian:</strong> Simulasi Monte Carlo adalah alat ukur risiko statistik berbasis data historis,
+  bukan prediksi masa depan. Hasil ini tidak memperhitungkan perubahan fundamental perusahaan, kebijakan moneter,
+  sentimen pasar, maupun kejadian luar biasa yang tidak tercatat dalam sejarah.
+  <strong>Gunakan sebagai pelengkap analisis, bukan satu-satunya dasar keputusan investasi.</strong>
 </div>
+
+<!-- THEORY SECTION -->
+<section class="theory-section" id="theory">
+  <div class="theory-header" style="padding-top:64px;">
+    <div class="section-tag">Landasan Teori</div>
+    <h2>Memahami Simulasi Monte Carlo</h2>
+    <p>Sebelum menginterpretasikan hasil, penting untuk memahami apa yang sebenarnya dimodelkan dan asumsi apa yang mendasarinya.</p>
+  </div>
+
+  <div class="theory-grid">
+    <!-- Card 1 -->
+    <div class="theory-card">
+      <div class="tc-number">01</div>
+      <h3>Apa itu Simulasi Monte Carlo?</h3>
+      <p>
+        Monte Carlo bukan ramalan — melainkan metode untuk <em>memetakan distribusi kemungkinan</em>.
+        Dengan menjalankan ribuan skenario acak berdasarkan parameter historis (return rata-rata dan volatilitas),
+        kita memperoleh gambaran statistik tentang <em>seberapa lebar rentang kemungkinan</em> harga di masa depan.
+      </p>
+      <p style="margin-top:10px;">
+        Hasilnya bukan satu angka prediksi, melainkan kurva distribusi:
+        P5 menunjukkan skenario terburuk 5% simulasi, P95 menunjukkan skenario terbaik 5%, dan area di antaranya
+        mencakup 90% kemungkinan berdasarkan pola historis.
+      </p>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="theory-card">
+      <div class="tc-number">02</div>
+      <h3>Geometric Brownian Motion (GBM)</h3>
+      <p>
+        Model standar yang digunakan adalah GBM — fondasi Black-Scholes dan mayoritas model penetapan harga
+        derivatif keuangan. Harga saham diasumsikan bergerak secara kontinu dengan drift dan volatilitas konstan,
+        mengikuti proses stokastik Wiener.
+      </p>
+      <code class="formula-inline">
+        S<sub>t+1</sub> = S<sub>t</sub> × exp( μ_adj + σ × ε )<br>
+        <span class="comment"># μ_adj = drift − σ²/2  (koreksi Itô)</span><br>
+        <span class="comment"># ε ~ N(0,1)  (kejutan acak harian)</span>
+      </code>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="theory-card">
+      <div class="tc-number">03</div>
+      <h3>Parameter: Drift (μ) dan Volatilitas (σ)</h3>
+      <p>
+        Kedua parameter dihitung dari log return historis. <strong>μ (drift)</strong> mencerminkan tren
+        rata-rata return harian, disetahunkan dengan mengalikan 252 (hari trading per tahun).
+        <strong>σ (volatilitas)</strong> mengukur seberapa besar variasi return — semakin besar σ,
+        semakin lebar rentang kemungkinan harga.
+      </p>
+      <code class="formula-inline">
+        r<sub>t</sub> = ln(P<sub>t</sub> / P<sub>t-1</sub>)<br>
+        μ_annual = mean(r) × 252<br>
+        σ_annual = std(r) × √252
+      </code>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="theory-card">
+      <div class="tc-number">04</div>
+      <h3>Value at Risk (VaR) & Percentile</h3>
+      <p>
+        VaR 95% menjawab pertanyaan: <em>"Berapa kerugian maksimal yang tidak akan terlampaui
+        dengan keyakinan 95%?"</em> Dihitung dari P5 (persentil ke-5 distribusi harga akhir).
+        Ada <strong>5% kemungkinan kerugian melebihi angka ini</strong> — ini bukan nol.
+      </p>
+      <p style="margin-top:10px;">
+        Probabilitas naik/turun dihitung sederhana: persentase simulasi yang berakhir di atas/bawah
+        harga saat ini. Ini <em>bukan</em> probabilitas dari model regresi — ini frekuensi empirik simulasi.
+      </p>
+    </div>
+  </div>
+
+  <!-- Black Swan Card -->
+  <div class="bs-theory-card" style="margin-bottom:28px;">
+    <div>
+      <h3>Algoritma Black Swan — Merton Jump Diffusion</h3>
+      <p>
+        GBM mengasumsikan return berdistribusi normal — artinya kejadian ekstrem dianggap sangat jarang.
+        Kenyataannya, pasar memiliki <em>fat tail</em>: crash seperti 2008, COVID-2020, atau krisis Asia 1998
+        terjadi lebih sering dari yang diprediksi distribusi normal.
+      </p>
+      <p style="margin-top:12px;">
+        Model Merton (1976) menambahkan <strong>proses Poisson</strong> untuk mewakili lompatan diskontinu:
+        kejadian langka namun berdampak besar. Bayangkan Monte Carlo sebagai peta cuaca harian —
+        Black Swan menambahkan kemungkinan <em>badai yang belum pernah tercatat</em>.
+      </p>
+      <code class="formula-inline" style="margin-top:14px; border-left-color: var(--red);">
+        S<sub>t+1</sub> = S<sub>t</sub> × exp( μ_adj + σ × ε + Σ J<sub>k</sub> )<br>
+        <span class="comment"># Σ J_k = total lompatan pada hari t (Poisson arrivals)</span><br>
+        <span class="comment"># J ~ N(μ_jump, σ_jump)  ukuran lompatan acak</span>
+      </code>
+    </div>
+    <div>
+      <div class="bs-theory-compare">
+        <div class="bs-compare-row" style="font-weight:700;font-size:11px;color:var(--light);padding-top:0;">
+          <div class="col-a">GBM Standar</div>
+          <div class="col-vs">vs</div>
+          <div class="col-b">Black Swan</div>
+        </div>
+        <div class="bs-compare-row">
+          <div class="col-a">Return normal</div>
+          <div class="col-vs">→</div>
+          <div class="col-b">Return + lompatan</div>
+        </div>
+        <div class="bs-compare-row">
+          <div class="col-a">Pergerakan mulus</div>
+          <div class="col-vs">→</div>
+          <div class="col-b">Gap mendadak</div>
+        </div>
+        <div class="bs-compare-row">
+          <div class="col-a">Ekor normal</div>
+          <div class="col-vs">→</div>
+          <div class="col-b">Fat tail eksplisit</div>
+        </div>
+        <div class="bs-compare-row">
+          <div class="col-a">VaR lebih sempit</div>
+          <div class="col-vs">→</div>
+          <div class="col-b">VaR lebih konservatif</div>
+        </div>
+        <div class="bs-compare-row">
+          <div class="col-a">Cocok: pasar normal</div>
+          <div class="col-vs">→</div>
+          <div class="col-b">Cocok: stress testing</div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.6;">
+        <strong>Penting:</strong> Tidak ada jaminan bahwa hasil yang diantisipasi akan terwujud.
+        Pergerakan aktual dapat menyimpang secara signifikan bahkan dari proyeksi paling konservatif —
+        termasuk skenario yang belum pernah terjadi dalam data historis.
+      </p>
+    </div>
+  </div>
+
+  <!-- Limitations -->
+  <div class="theory-card full">
+    <h3>Keterbatasan Model yang Harus Dipahami</h3>
+    <p style="margin-bottom:16px;">
+      Simulasi Monte Carlo menyederhanakan model dengan mengabaikan faktor eksternal yang tidak secara langsung
+      terkait dengan pergerakan harga statistik. Berikut asumsi yang dibuat dan realitas yang diabaikan:
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
+      <div style="background:var(--surface2);border-radius:8px;padding:14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Diabaikan Model</div>
+        <ul style="font-size:12.5px;color:var(--muted);line-height:1.8;list-style:none;padding:0;">
+          <li>— Perubahan fundamental bisnis</li>
+          <li>— Kebijakan moneter mendadak</li>
+          <li>— Tren makroekonomi</li>
+          <li>— Sentimen & psikologi pasar</li>
+          <li>— Pengaruh siklus industri</li>
+          <li>— Perubahan manajemen</li>
+        </ul>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Asumsi GBM</div>
+        <ul style="font-size:12.5px;color:var(--muted);line-height:1.8;list-style:none;padding:0;">
+          <li>— Volatilitas konstan (tidak realistis)</li>
+          <li>— Return berdistribusi normal</li>
+          <li>— Tidak ada lompatan harga</li>
+          <li>— Pasar efisien sempurna</li>
+          <li>— Parameter historis stabil</li>
+          <li>— Tidak ada biaya transaksi</li>
+        </ul>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Cara Penggunaan Tepat</div>
+        <ul style="font-size:12.5px;color:var(--muted);line-height:1.8;list-style:none;padding:0;">
+          <li>— Memahami rentang risiko</li>
+          <li>— Stress testing portofolio</li>
+          <li>— Sizing posisi</li>
+          <li>— Bukan untuk timing pasar</li>
+          <li>— Pelengkap analisis fundamental</li>
+          <li>— Diskusi dengan advisor keuangan</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <span>Permodelan Simulasi — Alat Analisis Risiko Statistik</span>
+  <div style="display:flex;gap:20px;">
+    <a href="/calculation" class="footer-link">Detail Perhitungan</a>
+    <a href="#theory" class="footer-link">Teori</a>
+  </div>
+</footer>
 
 <script>
 const IDX = new Set(['BBCA','BBRI','BMRI','TLKM','ASII','UNVR','GOTO','BYAN','BUKA','INDF',
@@ -264,12 +1046,12 @@ const US = new Set(['AAPL','MSFT','GOOGL','AMZN','META','TSLA','NVDA','NFLX','AM
   'JPM','BAC','V','MA','DIS','UBER','ABNB','PLTR','COIN','RBLX','SHOP']);
 
 function detectExchange(t) {
-  if (!t) return {label:'AUTO', hint:'Ketik kode — sistem otomatis mengenali IDX atau US'};
-  if (t.includes('.')) return {label: t.split('.')[1], hint:`Exchange eksplisit: ${t}`};
-  if (US.has(t)) return {label:'NYSE/NASDAQ', hint:`Terdeteksi saham AS — akan digunakan langsung sebagai ${t}`};
-  if (IDX.has(t)) return {label:'IDX', hint:`Terdeteksi saham Indonesia — akan digunakan sebagai ${t}.JK`};
-  if (t.length <= 4 && /^[A-Z]+$/.test(t)) return {label:'IDX?', hint:`Kode pendek — diasumsikan IDX, akan dicoba ${t}.JK`};
-  return {label:'US?', hint:`Akan dicoba sebagai saham US: ${t}`};
+  if (!t) return {label:'AUTO', hint:'Ketik kode — sistem otomatis mengenali IDX atau pasar AS'};
+  if (t.includes('.')) return {label: t.split('.').pop(), hint:`Exchange eksplisit: ${t}`};
+  if (US.has(t)) return {label:'NYSE/NASDAQ', hint:`Saham AS terdeteksi — akan digunakan sebagai ${t}`};
+  if (IDX.has(t)) return {label:'IDX (BEI)', hint:`Saham Indonesia terdeteksi — akan digunakan sebagai ${t}.JK`};
+  if (t.length <= 4 && /^[A-Z]+$/.test(t)) return {label:'IDX?', hint:`Kode pendek — diasumsikan IDX, dicoba ${t}.JK`};
+  return {label:'US?', hint:`Akan dicoba sebagai saham AS: ${t}`};
 }
 
 document.getElementById('ticker').addEventListener('input', function() {
@@ -291,16 +1073,41 @@ function setYears(y) { document.getElementById('years').value = y; }
 function updateDayHint() {
   const d = parseInt(document.getElementById('days').value) || 0;
   const hint = document.getElementById('dayHint');
-  if (d <= 5) hint.textContent = `≈ 1 minggu trading`;
-  else if (d <= 21) hint.textContent = `≈ ${Math.round(d/5)} minggu trading`;
-  else if (d <= 252) hint.textContent = `≈ ${(d/21).toFixed(1)} bulan trading`;
-  else hint.textContent = `≈ ${(d/252).toFixed(1)} tahun trading`;
-  hint.style.color = d > 252 ? '#f59e0b' : '#4f9cf9';
+  let label = '';
+  if (d <= 5) label = `${d} hari trading`;
+  else if (d <= 21) label = `≈ ${Math.round(d/5)} minggu trading`;
+  else if (d <= 252) label = `≈ ${(d/21).toFixed(1)} bulan trading`;
+  else label = `≈ ${(d/252).toFixed(1)} tahun trading`;
+  hint.textContent = label;
+  hint.style.color = d > 252 ? 'var(--amber)' : 'var(--blue)';
 }
 
-function onSubmit() {
+let bsActive = false;
+function toggleBS() {
+  bsActive = !bsActive;
+  document.getElementById('bsInput').value = bsActive ? 'true' : 'false';
+  document.getElementById('bsToggle').classList.toggle('on', bsActive);
+  document.getElementById('bsSection').classList.toggle('active', bsActive);
+  document.getElementById('bsHeader').classList.toggle('active-header', bsActive);
+  document.getElementById('bsParams').classList.toggle('show', bsActive);
+  const btn = document.getElementById('btnRun');
+  btn.classList.toggle('bs-mode', bsActive);
+  btn.innerHTML = bsActive
+    ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Jalankan dengan Black Swan`
+    : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Jalankan Simulasi`;
+}
+
+// Sync jump_mean and jump_std from % input to decimal hidden inputs
+document.getElementById('jMeanInput').addEventListener('input', function() {
+  document.getElementById('jMean').value = (parseFloat(this.value) / 100).toFixed(3);
+});
+document.getElementById('jStdInput').addEventListener('input', function() {
+  document.getElementById('jStd').value = (parseFloat(this.value) / 100).toFixed(3);
+});
+
+function handleSubmit() {
   document.getElementById('btnRun').style.display = 'none';
-  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('loadingBox').style.display = 'flex';
 }
 </script>
 </body>

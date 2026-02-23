@@ -4,329 +4,849 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hasil Simulasi — {{ r.ticker_short }}</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#0d0f1a;--surface:#161929;--surface2:#1e2235;--border:#2a2d40;
-    --blue:#4f9cf9;--blue-dim:rgba(79,156,249,0.1);
-    --green:#22c55e;--green-dim:rgba(34,197,94,0.1);
-    --red:#ef4444;--red-dim:rgba(239,68,68,0.1);
-    --yellow:#f59e0b;--yellow-dim:rgba(245,158,11,0.1);
-    --text:#e2e8f0;--muted:#64748b;--radius:12px;
+    --bg: #F5F4F0;
+    --surface: #FFFFFF;
+    --surface2: #F0EFE9;
+    --border: #E0DED6;
+    --blue: #1D4ED8;
+    --blue-soft: #EEF2FF;
+    --green: #15803D;
+    --green-soft: #F0FDF4;
+    --red: #B91C1C;
+    --red-soft: #FEF2F2;
+    --amber: #B45309;
+    --amber-soft: #FFFBEB;
+    --text: #1C1917;
+    --muted: #78716C;
+    --light: #A8A29E;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
   }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding:24px;}
-  .container{max-width:1100px;margin:0 auto;}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; }
+
   /* Header */
-  .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
-  .back-btn{display:flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:13px;transition:color .2s;}
-  .back-btn:hover{color:var(--blue);}
-  .action-btns{display:flex;gap:8px;}
-  .btn{padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
-  .btn-ghost{background:var(--surface);border:1px solid var(--border);color:var(--muted);}
-  .btn-ghost:hover{border-color:var(--blue);color:var(--blue);}
-  .btn-primary{background:var(--blue);color:#fff;}
-  .btn-primary:hover{opacity:.85;}
-  .btn-detail{background:var(--surface);border:1px solid var(--yellow);color:var(--yellow);}
-  .btn-detail:hover{background:var(--yellow-dim);}
-  /* Hero */
-  .hero-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px 32px;margin-bottom:20px;}
-  .stock-name{display:flex;align-items:baseline;gap:12px;margin-bottom:4px;}
-  .ticker-tag{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:700;color:var(--blue);}
-  .company-name{color:var(--muted);font-size:1rem;}
-  .meta-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
-  .meta-item{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;}
-  .meta-item span{color:var(--text);font-weight:500;}
-  /* Warnings */
-  .warning-box{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:12px 16px;margin-bottom:20px;}
-  .warning-box p{font-size:13px;color:var(--yellow);display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;}
-  .warning-box p:last-child{margin-bottom:0;}
-  /* KPI Row */
-  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
-  .kpi{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;text-align:center;}
-  .kpi .k-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px;font-weight:600;}
-  .kpi .k-val{font-size:1.5rem;font-weight:700;font-family:'DM Mono',monospace;line-height:1;}
-  .kpi .k-sub{font-size:11px;color:var(--muted);margin-top:5px;}
-  .kpi.up{border-bottom:3px solid var(--green);}
-  .kpi.down{border-bottom:3px solid var(--red);}
-  .kpi.warn{border-bottom:3px solid var(--yellow);}
-  .kpi.neutral{border-bottom:3px solid var(--blue);}
-  .k-green{color:var(--green);}
-  .k-red{color:var(--red);}
-  .k-yellow{color:var(--yellow);}
-  .k-blue{color:var(--blue);}
-  /* Chart */
-  .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:20px;}
-  .chart-card img{width:100%;display:block;}
-  .chart-legend{padding:16px 24px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:16px;}
-  .legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
-  .legend-dot{width:10px;height:10px;border-radius:50%;}
-  /* Sections */
-  .sections{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
-  .section-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;}
-  .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-  .stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
-  .stat-row:last-child{border-bottom:none;}
-  .stat-label{font-size:13px;color:var(--muted);}
-  .stat-val{font-size:13px;font-weight:600;font-family:'DM Mono',monospace;}
-  /* Risk Bars */
-  .risk-visual{margin-bottom:20px;}
-  .risk-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
-  .risk-label-col{width:160px;font-size:12px;color:var(--muted);text-align:right;flex-shrink:0;}
-  .risk-bar-wrap{flex:1;background:var(--surface2);border-radius:4px;height:8px;overflow:hidden;}
-  .risk-bar{height:100%;border-radius:4px;transition:width .6s ease;}
-  .risk-val{width:80px;font-size:12px;font-family:'DM Mono',monospace;text-align:left;}
-  /* Percentile band */
-  .pct-band{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;position:relative;overflow:hidden;}
-  .pct-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:16px;}
-  .pct-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0;}
-  .pct-col{text-align:center;padding:12px 4px;}
-  .pct-col.danger{background:rgba(239,68,68,0.08);border-radius:8px 0 0 8px;}
-  .pct-col.safe{background:rgba(34,197,94,0.08);border-radius:0 8px 8px 0;}
-  .pct-num{font-size:11px;color:var(--muted);margin-bottom:4px;}
-  .pct-price{font-size:0.9rem;font-weight:700;font-family:'DM Mono',monospace;}
-  .pct-arrow{font-size:18px;margin-bottom:2px;}
-  /* Interp */
-  .interp-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:20px;}
-  .interp-card h3{font-size:14px;font-weight:700;margin-bottom:14px;}
-  .interp-item{display:flex;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);}
-  .interp-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
-  .interp-icon{font-size:1.2rem;flex-shrink:0;margin-top:2px;}
-  .interp-text{font-size:13px;color:var(--muted);line-height:1.6;}
-  .interp-text strong{color:var(--text);}
-  /* Disclaimer */
-  .disclaimer{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius);padding:14px 18px;font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
-  /* ===== PRINT ===== */
-  @media print {
-    body{background:white;color:#1e293b;padding:0;}
-    .no-print{display:none!important;}
-    .top-bar,.action-btns,.back-btn{display:none!important;}
-    .surface,.surface2,.section-card,.hero-card,.interp-card,.pct-band,.chart-card{
-      background:white!important;border:1px solid #e2e8f0!important;
-    }
-    .stat-label,.section-title,.k-label,.pct-num,.meta-item,.interp-text,.legend-item,
-    .muted,.risk-label-col{color:#64748b!important;}
-    .stat-val,.k-val,.pct-price{color:#1e293b!important;}
-    .k-green{color:#16a34a!important;}
-    .k-red{color:#dc2626!important;}
-    .k-yellow{color:#d97706!important;}
-    .k-blue{color:#2563eb!important;}
-    .ticker-tag{color:#2563eb!important;}
-    .company-name{color:#64748b!important;}
-    .kpi{border-bottom-width:2px!important;}
-    .kpi.up{border-bottom-color:#16a34a!important;}
-    .kpi.down{border-bottom-color:#dc2626!important;}
-    .kpi.warn{border-bottom-color:#d97706!important;}
-    .kpi.neutral{border-bottom-color:#2563eb!important;}
-    img.dark-chart{display:none!important;}
-    img.light-chart{display:block!important;}
-    .print-header{display:block!important;}
+  .site-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
   }
-  img.light-chart{display:none;}
-  .print-header{display:none;text-align:center;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e2e8f0;}
-  .print-header h2{font-size:1.4rem;color:#1e293b;}
-  .print-header p{font-size:12px;color:#64748b;margin-top:4px;}
-  @media(max-width:700px){
-    .kpi-row{grid-template-columns:1fr 1fr;}
-    .sections{grid-template-columns:1fr;}
-    .pct-grid{grid-template-columns:repeat(3,1fr);}
+  .back-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+  .back-link:hover { color: var(--blue); }
+  .header-actions { display: flex; gap: 8px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    font-family: 'IBM Plex Sans', sans-serif;
+    text-decoration: none;
+    transition: all 0.15s;
+    background: var(--surface);
+    color: var(--muted);
+  }
+  .btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
+  .btn-primary { background: var(--text); color: white; border-color: var(--text); }
+  .btn-primary:hover { background: #292524; color: white; border-color: #292524; }
+
+  /* Main layout */
+  .container { max-width: 1140px; margin: 0 auto; padding: 28px 24px; }
+
+  /* Black swan badge */
+  .mode-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 99px;
+  }
+  .mode-gbm { background: var(--blue-soft); color: var(--blue); border: 1px solid rgba(29,78,216,0.2); }
+  .mode-bs { background: var(--red-soft); color: var(--red); border: 1px solid rgba(185,28,28,0.2); }
+
+  /* Hero info bar */
+  .result-hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+  }
+  .stock-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+  .ticker-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--blue);
+  }
+  .company-full { color: var(--muted); font-size: 1rem; font-weight: 400; }
+  .meta-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .meta-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .meta-chip strong { color: var(--text); font-weight: 600; }
+
+  /* Warning box */
+  .warning-box {
+    background: var(--amber-soft);
+    border: 1px solid #FDE68A;
+    border-radius: 8px;
+    padding: 11px 14px;
+    margin-bottom: 18px;
+  }
+  .warning-box p {
+    font-size: 12.5px;
+    color: var(--amber);
+    line-height: 1.6;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .warning-box p:last-child { margin-bottom: 0; }
+
+  /* KPI Row */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .kpi {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .kpi.highlight-up { background: var(--green-soft); border-color: #BBF7D0; }
+  .kpi.highlight-down { background: var(--red-soft); border-color: #FECACA; }
+  .kpi.highlight-amber { background: var(--amber-soft); border-color: #FDE68A; }
+  .kpi.highlight-blue { background: var(--blue-soft); border-color: #BFDBFE; }
+  .kpi .k-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--light); margin-bottom: 7px; }
+  .kpi .k-value { font-size: 1.25rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; line-height: 1.2; }
+  .kpi .k-sub { font-size: 10.5px; color: var(--light); margin-top: 4px; }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .amber { color: var(--amber); }
+  .blue { color: var(--blue); }
+
+  /* Chart section */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .chart-card img { width: 100%; display: block; }
+  .chart-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .legend-swatch {
+    width: 24px;
+    height: 3px;
+    border-radius: 2px;
+  }
+  .legend-swatch.dashed {
+    background: repeating-linear-gradient(90deg, currentColor 0, currentColor 4px, transparent 4px, transparent 8px);
+  }
+
+  /* Percentile Spectrum */
+  .pct-spectrum {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+  }
+  .pct-title {
+    font-family: 'Lora', serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 5px;
+  }
+  .pct-subtitle { font-size: 12.5px; color: var(--muted); margin-bottom: 20px; }
+  .pct-bar-wrap {
+    position: relative;
+    margin-bottom: 10px;
+  }
+  .pct-track {
+    height: 8px;
+    border-radius: 99px;
+    background: linear-gradient(to right, var(--red) 0%, #F97316 20%, var(--light) 50%, #84CC16 80%, var(--green) 100%);
+    margin-bottom: 8px;
+  }
+  .pct-cols {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+  .pct-col { text-align: center; }
+  .pct-col .pc-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--light); letter-spacing: 0.05em; margin-bottom: 4px; }
+  .pct-col .pc-price { font-size: 14px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+  .pct-col .pc-delta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .pct-col:first-child .pc-price { color: var(--red); }
+  .pct-col:nth-child(2) .pc-price { color: #EA580C; }
+  .pct-col:nth-child(3) .pc-price { color: var(--text); }
+  .pct-col:nth-child(4) .pc-price { color: #65A30D; }
+  .pct-col:last-child .pc-price { color: var(--green); }
+
+  /* Stats grids */
+  .stats-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+  }
+  .stat-card-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .stat-label { font-size: 13px; color: var(--muted); }
+  .stat-value { font-size: 13.5px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+
+  /* VaR visual bar */
+  .var-visual {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+  }
+  .var-bars { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 14px; }
+  .var-bar-row { display: flex; align-items: center; gap: 12px; }
+  .vb-label { width: 160px; font-size: 12.5px; color: var(--muted); text-align: right; flex-shrink: 0; }
+  .vb-track { flex: 1; background: var(--surface2); border-radius: 4px; height: 10px; overflow: hidden; border: 1px solid var(--border); }
+  .vb-fill { height: 100%; border-radius: 4px; }
+  .vb-value { width: 80px; font-size: 12.5px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+
+  /* Black Swan info */
+  .bs-info-card {
+    background: var(--red-soft);
+    border: 1px solid #FECACA;
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+  }
+  .bs-info-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--red);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .bs-info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .bs-stat { background: white; border-radius: 7px; padding: 12px 14px; border: 1px solid #FECACA; }
+  .bs-stat .bss-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--red); letter-spacing: 0.05em; margin-bottom: 4px; }
+  .bs-stat .bss-value { font-size: 1.1rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; color: var(--text); }
+  .bs-note { font-size: 12.5px; color: var(--muted); line-height: 1.65; }
+  .bs-note strong { color: var(--red); }
+
+  /* Interpretation */
+  .interp-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+  }
+  .interp-title {
+    font-family: 'Lora', serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+  .interp-item {
+    display: flex;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .interp-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .interp-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .interp-body { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+  .interp-body strong { color: var(--text); font-weight: 600; }
+
+  /* Disclaimer */
+  .disclaimer-card {
+    background: var(--amber-soft);
+    border: 1px solid #FDE68A;
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--amber);
+    line-height: 1.7;
+  }
+  .disclaimer-card strong { font-weight: 700; }
+
+  /* Print Modal */
+  .print-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .print-overlay.open { display: flex; }
+  .print-modal {
+    background: var(--surface);
+    border-radius: 16px;
+    max-width: 520px;
+    width: 100%;
+    padding: 32px;
+    box-shadow: var(--shadow-lg);
+  }
+  .print-modal h3 {
+    font-family: 'Lora', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .print-modal p { font-size: 13.5px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+  .print-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .print-option {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+  }
+  .print-option:hover, .print-option.selected {
+    border-color: var(--blue);
+    background: var(--blue-soft);
+  }
+  .print-option .po-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .print-option .po-desc { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+  .print-modal-actions { display: flex; gap: 10px; }
+  .modal-btn {
+    flex: 1;
+    padding: 11px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .modal-btn-cancel { background: var(--surface2); color: var(--muted); }
+  .modal-btn-cancel:hover { background: var(--border); }
+  .modal-btn-print { background: var(--text); color: white; border-color: var(--text); }
+  .modal-btn-print:hover { background: #292524; }
+
+  /* ── PRINT CSS ── */
+  @media print {
+    .site-header, .header-actions, .back-link, .no-print { display: none !important; }
+    body { background: white; }
+    .container { padding: 0; max-width: 100%; }
+    .result-hero, .chart-card, .pct-spectrum, .stat-card, .var-visual,
+    .bs-info-card, .interp-card { 
+      border-color: #E5E7EB; 
+      box-shadow: none;
+      break-inside: avoid;
+    }
+    .kpi.highlight-up { background: #F0FDF4; }
+    .kpi.highlight-down { background: #FEF2F2; }
+    .kpi.highlight-amber { background: #FFFBEB; }
+    .kpi.highlight-blue { background: #EEF2FF; }
+    img { max-width: 100%; }
+    .disclaimer-card { background: #FFFBEB; }
+    .print-overlay { display: none !important; }
+  }
+
+  @media (max-width: 700px) {
+    .kpi-row { grid-template-columns: 1fr 1fr; }
+    .stats-layout { grid-template-columns: 1fr; }
+    .pct-cols { grid-template-columns: repeat(3, 1fr); }
+    .bs-info-grid { grid-template-columns: 1fr 1fr; }
+    .site-header { padding: 0 16px; }
+    .container { padding: 16px; }
   }
 </style>
 </head>
 <body>
-<div class="container">
-  <!-- Print Header -->
-  <div class="print-header">
-    <h2>Laporan Simulasi Monte Carlo — {{ r.ticker }}</h2>
-    <p>{{ r.company_name }} | Data: {{ r.start_date }} s/d {{ r.end_date }} | {{ r.simulations | int }} Simulasi | {{ r.days }} Hari Prediksi</p>
-  </div>
 
-  <!-- Top Bar -->
-  <div class="top-bar no-print">
-    <a href="/" class="back-btn">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      Simulasi Baru
+<header class="site-header">
+  <a href="/" class="back-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    Simulasi Baru
+  </a>
+  <div class="header-actions no-print">
+    <a href="/calculation?data={{ r.calc_details | urlencode }}" class="btn" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+      Detail Perhitungan
     </a>
-    <div class="action-btns">
-      <a href="/calculation?data={{ r.calc_details | urlencode }}" class="btn btn-detail" target="_blank">
-        🧮 Detail Perhitungan
-      </a>
-      <button onclick="window.print()" class="btn btn-ghost">
-        🖨️ Cetak / PDF
-      </button>
-    </div>
+    <button onclick="document.getElementById('printOverlay').classList.add('open')" class="btn btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Cetak / Ekspor PDF
+    </button>
   </div>
+</header>
+
+<div class="container">
 
   <!-- Hero -->
-  <div class="hero-card">
-    <div class="stock-name">
-      <div class="ticker-tag">{{ r.ticker }}</div>
-      <div class="company-name">{{ r.company_name }}</div>
+  <div class="result-hero">
+    <div class="stock-header">
+      <span class="ticker-name">{{ r.ticker }}</span>
+      <span class="company-full">{{ r.company_name }}</span>
+      {% if r.mode == 'blackswan' %}
+      <span class="mode-badge mode-bs">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        Black Swan (Jump Diffusion)
+      </span>
+      {% else %}
+      <span class="mode-badge mode-gbm">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Geometric Brownian Motion
+      </span>
+      {% endif %}
     </div>
-    <div class="meta-row">
-      <div class="meta-item">📅 Data <span>{{ r.start_date }} – {{ r.end_date }}</span></div>
-      <div class="meta-item">📊 <span>{{ r.trading_days }} hari trading</span></div>
-      <div class="meta-item">🔄 <span>{{ r.simulations | int }} simulasi</span></div>
-      <div class="meta-item">🎯 Horizon <span>{{ r.days }} hari</span></div>
-      {% if r.sector != '-' %}
-      <div class="meta-item">🏭 <span>{{ r.sector }}</span></div>
+    <div class="meta-chips">
+      <div class="meta-chip">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Data <strong>{{ r.start_date }} – {{ r.end_date }}</strong>
+      </div>
+      <div class="meta-chip">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <strong>{{ r.trading_days }}</strong> hari trading historis
+      </div>
+      <div class="meta-chip">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <strong>{{ r.simulations | int }}</strong> simulasi independen
+      </div>
+      <div class="meta-chip">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        Horizon <strong>{{ r.days }}</strong> hari ke depan
+      </div>
+      {% if r.sector and r.sector != '-' %}
+      <div class="meta-chip"><strong>{{ r.sector }}</strong></div>
       {% endif %}
     </div>
 
     {% if r.warnings %}
     <div class="warning-box">
       {% for w in r.warnings %}
-      <p>⚠️ {{ w }}</p>
+      <p>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        {{ w }}
+      </p>
       {% endfor %}
     </div>
     {% endif %}
 
-    <!-- KPI Row -->
+    <!-- KPIs -->
     <div class="kpi-row">
-      <div class="kpi neutral">
-        <div class="k-label">Harga Sekarang</div>
-        <div class="k-val k-blue">{{ r.last_price }}</div>
+      <div class="kpi highlight-blue">
+        <div class="k-label">Harga Saat Ini</div>
+        <div class="k-value blue">{{ r.last_price }}</div>
         <div class="k-sub">per {{ r.end_date }}</div>
       </div>
-      <div class="kpi up">
+      <div class="kpi highlight-up">
         <div class="k-label">Prob. Naik</div>
-        <div class="k-val k-green">{{ r.prob_up }}</div>
-        <div class="k-sub">dari {{ r.simulations | int }} simulasi</div>
+        <div class="k-value green">{{ r.prob_up }}</div>
+        <div class="k-sub">simulasi berakhir lebih tinggi</div>
       </div>
-      <div class="kpi down">
+      <div class="kpi highlight-down">
         <div class="k-label">Prob. Turun</div>
-        <div class="k-val k-red">{{ r.prob_down }}</div>
-        <div class="k-sub">dari {{ r.simulations | int }} simulasi</div>
+        <div class="k-value red">{{ r.prob_down }}</div>
+        <div class="k-sub">simulasi berakhir lebih rendah</div>
       </div>
-      <div class="kpi warn">
-        <div class="k-label">VaR 95% (Rugi Maks)</div>
-        <div class="k-val k-yellow">{{ r.var_95_abs }}</div>
-        <div class="k-sub">{{ r.var_95_pct }} dari investasi</div>
+      <div class="kpi highlight-amber">
+        <div class="k-label">VaR 95%</div>
+        <div class="k-value amber">{{ r.var_95_abs }}</div>
+        <div class="k-sub">maks rugi dgn keyakinan 95%</div>
+      </div>
+      <div class="kpi {% if r.expected_return[0] == '+' %}highlight-up{% else %}highlight-down{% endif %}">
+        <div class="k-label">Expected Return</div>
+        <div class="k-value {% if r.expected_return[0] == '+' %}green{% else %}red{% endif %}">{{ r.expected_return }}</div>
+        <div class="k-sub">dari harga saat ini</div>
       </div>
     </div>
   </div>
 
   <!-- Chart -->
   <div class="chart-card">
-    <img class="dark-chart" src="data:image/png;base64,{{ r.plot_url }}" alt="Chart">
-    <img class="light-chart" src="data:image/png;base64,{{ r.print_url }}" alt="Chart Print">
-    <div class="chart-legend no-print">
-      <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div> P95 Skenario Terbaik</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div> Rata-rata Prediksi</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div> P5 Skenario Terburuk</div>
-      <div class="legend-item"><div class="legend-dot" style="background:rgba(79,156,249,0.5);width:20px;border-radius:2px;"></div> Rentang 50% & 90%</div>
-    </div>
-  </div>
-
-  <!-- Percentile Band -->
-  <div class="pct-band">
-    <div class="pct-title">📊 Spektrum Kemungkinan Harga Akhir ({{ r.days }} Hari)</div>
-    <div class="pct-grid">
-      <div class="pct-col danger">
-        <div class="pct-arrow">🔴</div>
-        <div class="pct-num">P5 — Skenario Sangat Buruk</div>
-        <div class="pct-price k-red">{{ r.q5_price }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">{{ r.downside_pct }} dari sekarang</div>
+    <img src="data:image/png;base64,{{ r.plot_url }}" alt="Monte Carlo Simulation Chart">
+    <div class="chart-footer no-print">
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:var(--green);"></div>
+        P95 Skenario Terbaik
       </div>
-      <div class="pct-col">
-        <div class="pct-arrow">🟠</div>
-        <div class="pct-num">P25 — Kuartil Bawah</div>
-        <div class="pct-price" style="color:#fb923c;">{{ r.q25_price }}</div>
+      <div class="legend-item">
+        <div class="legend-swatch {% if r.mode == 'blackswan' %}{% else %}{% endif %}" style="background:var(--blue);"></div>
+        Rata-rata Semua Simulasi
       </div>
-      <div class="pct-col">
-        <div class="pct-arrow">⚪</div>
-        <div class="pct-num">Median / P50</div>
-        <div class="pct-price">{{ r.median_price }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Titik tengah semua simulasi</div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:var(--red);"></div>
+        P5 Skenario Terburuk
       </div>
-      <div class="pct-col">
-        <div class="pct-arrow">🟡</div>
-        <div class="pct-num">P75 — Kuartil Atas</div>
-        <div class="pct-price" style="color:#facc15;">{{ r.q75_price }}</div>
-      </div>
-      <div class="pct-col safe">
-        <div class="pct-arrow">🟢</div>
-        <div class="pct-num">P95 — Skenario Sangat Baik</div>
-        <div class="pct-price k-green">{{ r.q95_price }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">{{ r.upside_pct }} dari sekarang</div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:rgba(29,78,216,0.2);width:30px;height:8px;border-radius:2px;"></div>
+        Rentang 50% & 90% Simulasi
       </div>
     </div>
   </div>
 
-  <!-- Stats + Risk -->
-  <div class="sections">
-    <div class="section-card">
-      <div class="section-title">📈 Statistik Harga Prediksi</div>
-      <div class="stat-row"><span class="stat-label">Rata-rata (Mean)</span><span class="stat-val k-yellow">{{ r.mean_price }}</span></div>
-      <div class="stat-row"><span class="stat-label">Nilai Tengah (Median)</span><span class="stat-val">{{ r.median_price }}</span></div>
-      <div class="stat-row"><span class="stat-label">Standar Deviasi</span><span class="stat-val">{{ r.std_price }}</span></div>
-      <div class="stat-row"><span class="stat-label">Minimum (terburuk)</span><span class="stat-val k-red">{{ r.min_price }}</span></div>
-      <div class="stat-row"><span class="stat-label">Maximum (terbaik)</span><span class="stat-val k-green">{{ r.max_price }}</span></div>
-      <div class="stat-row"><span class="stat-label">Expected Return</span><span class="stat-val k-yellow">{{ r.expected_return }}</span></div>
+  <!-- Percentile Spectrum -->
+  <div class="pct-spectrum">
+    <div class="pct-title">Spektrum Kemungkinan Harga setelah {{ r.days }} Hari</div>
+    <div class="pct-subtitle">
+      90% dari semua simulasi berakhir di antara P5 ({{ r.q5_price }}) dan P95 ({{ r.q95_price }}).
+      Ini bukan jaminan — ini rentang probabilistik berbasis pola historis.
     </div>
-    <div class="section-card">
-      <div class="section-title">⚠️ Analisis Risiko (VaR)</div>
-      <div class="stat-row"><span class="stat-label">VaR 95% (nominal)</span><span class="stat-val k-red">{{ r.var_95_abs }}</span></div>
-      <div class="stat-row"><span class="stat-label">VaR 95% (%)</span><span class="stat-val k-red">-{{ r.var_95_pct }}</span></div>
-      <div class="stat-row"><span class="stat-label">VaR 99% (nominal)</span><span class="stat-val k-red">{{ r.var_99_abs }}</span></div>
-      <div class="stat-row"><span class="stat-label">VaR 99% (%)</span><span class="stat-val k-red">-{{ r.var_99_pct }}</span></div>
-      <div class="stat-row"><span class="stat-label">Volatilitas (σ) Tahunan</span><span class="stat-val k-blue">{{ r.sigma_annual }}</span></div>
-      <div class="stat-row"><span class="stat-label">Return (μ) Tahunan</span><span class="stat-val k-blue">{{ r.mu_annual }}</span></div>
-    </div>
-    <div class="section-card">
-      <div class="section-title">📊 Parameter GBM Historis</div>
-      <div class="stat-row"><span class="stat-label">μ harian (rata-rata return)</span><span class="stat-val">{{ r.mu_daily }}</span></div>
-      <div class="stat-row"><span class="stat-label">σ harian (volatilitas)</span><span class="stat-val">{{ r.sigma_daily }}</span></div>
-      <div class="stat-row"><span class="stat-label">μ tahunan</span><span class="stat-val">{{ r.mu_annual }}</span></div>
-      <div class="stat-row"><span class="stat-label">σ tahunan</span><span class="stat-val">{{ r.sigma_annual }}</span></div>
-      <div class="stat-row"><span class="stat-label">Jumlah data historis</span><span class="stat-val">{{ r.trading_days }} hari</span></div>
-    </div>
-    <div class="section-card">
-      <div class="section-title">🎯 Probabilitas Detail</div>
-      <div class="stat-row"><span class="stat-label">Prob. harga naik</span><span class="stat-val k-green">{{ r.prob_up }}</span></div>
-      <div class="stat-row"><span class="stat-label">Prob. harga turun</span><span class="stat-val k-red">{{ r.prob_down }}</span></div>
-      <div class="stat-row"><span class="stat-label">P95 (skenario terbaik)</span><span class="stat-val k-green">{{ r.q95_price }}</span></div>
-      <div class="stat-row"><span class="stat-label">P5 (skenario terburuk)</span><span class="stat-val k-red">{{ r.q5_price }}</span></div>
-      <div class="stat-row"><span class="stat-label">Potensi Upside P95</span><span class="stat-val k-green">{{ r.upside_pct }}</span></div>
-      <div class="stat-row"><span class="stat-label">Risiko Downside P5</span><span class="stat-val k-red">{{ r.downside_pct }}</span></div>
+    <div class="pct-track"></div>
+    <div class="pct-cols">
+      <div class="pct-col">
+        <div class="pc-label">P5 — Terburuk</div>
+        <div class="pc-price">{{ r.q5_price }}</div>
+        <div class="pc-delta">{{ r.downside_pct }} dari sekarang</div>
+      </div>
+      <div class="pct-col">
+        <div class="pc-label">P25 — Bawah</div>
+        <div class="pc-price">{{ r.q25_price }}</div>
+        <div class="pc-delta">Kuartil bawah</div>
+      </div>
+      <div class="pct-col">
+        <div class="pc-label">P50 — Median</div>
+        <div class="pc-price">{{ r.median_price }}</div>
+        <div class="pc-delta">Titik tengah simulasi</div>
+      </div>
+      <div class="pct-col">
+        <div class="pc-label">P75 — Atas</div>
+        <div class="pc-price">{{ r.q75_price }}</div>
+        <div class="pc-delta">Kuartil atas</div>
+      </div>
+      <div class="pct-col">
+        <div class="pc-label">P95 — Terbaik</div>
+        <div class="pc-price">{{ r.q95_price }}</div>
+        <div class="pc-delta">{{ r.upside_pct }} dari sekarang</div>
+      </div>
     </div>
   </div>
 
-  <!-- Interpretation -->
+  <!-- Black Swan Info (if active) -->
+  {% if r.mode == 'blackswan' %}
+  <div class="bs-info-card">
+    <div class="bs-info-title">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      Parameter Black Swan yang Digunakan
+    </div>
+    <div class="bs-info-grid">
+      <div class="bs-stat">
+        <div class="bss-label">Intensitas (λ)</div>
+        <div class="bss-value">{{ r.jump_intensity }}×/tahun</div>
+      </div>
+      <div class="bs-stat">
+        <div class="bss-label">Magnitude Rata-rata</div>
+        <div class="bss-value">{{ r.jump_mean_pct }}</div>
+      </div>
+      <div class="bs-stat">
+        <div class="bss-label">Sim. Terdampak Jump</div>
+        <div class="bss-value">{{ r.pct_with_jumps }}</div>
+      </div>
+      <div class="bs-stat">
+        <div class="bss-label">Model</div>
+        <div class="bss-value" style="font-size:0.85rem;">Merton 1976</div>
+      </div>
+    </div>
+    <div class="bs-note">
+      <strong>Catatan penting:</strong> Model Black Swan memberikan estimasi risiko yang lebih konservatif karena memperhitungkan
+      kemungkinan lompatan harga diskontinu yang tidak ditangkap GBM standar. Namun bahkan model ini tidak dapat
+      memprediksi <em>kapan</em> atau <em>seberapa besar</em> kejadian nyata akan terjadi. Tidak ada jaminan bahwa
+      hasil yang diantisipasi akan terwujud — pergerakan aktual dapat menyimpang secara signifikan dari proyeksi paling konservatif sekalipun.
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Stats layout -->
+  <div class="stats-layout">
+    <div class="stat-card">
+      <div class="stat-card-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Statistik Distribusi Harga
+      </div>
+      <div class="stat-row"><span class="stat-label">Rata-rata (Mean)</span><span class="stat-value amber">{{ r.mean_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">Median (P50)</span><span class="stat-value">{{ r.median_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">Standar Deviasi</span><span class="stat-value">{{ r.std_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">Minimum (0% terburuk)</span><span class="stat-value red">{{ r.min_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">Maximum (0% terbaik)</span><span class="stat-value green">{{ r.max_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">Skewness Return Historis</span><span class="stat-value">{{ r.skewness }}</span></div>
+      <div class="stat-row"><span class="stat-label">Excess Kurtosis (Fat Tail)</span><span class="stat-value">{{ r.kurtosis }}</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        Analisis Risiko (Value at Risk)
+      </div>
+      <div class="stat-row"><span class="stat-label">VaR 95% — Nominal</span><span class="stat-value red">{{ r.var_95_abs }}</span></div>
+      <div class="stat-row"><span class="stat-label">VaR 95% — Persentase</span><span class="stat-value red">-{{ r.var_95_pct }}</span></div>
+      <div class="stat-row"><span class="stat-label">VaR 99% — Nominal</span><span class="stat-value red">{{ r.var_99_abs }}</span></div>
+      <div class="stat-row"><span class="stat-label">VaR 99% — Persentase</span><span class="stat-value red">-{{ r.var_99_pct }}</span></div>
+      <div class="stat-row"><span class="stat-label">Probabilitas Naik</span><span class="stat-value green">{{ r.prob_up }}</span></div>
+      <div class="stat-row"><span class="stat-label">Probabilitas Turun</span><span class="stat-value red">{{ r.prob_down }}</span></div>
+      <div class="stat-row"><span class="stat-label">Expected Return (Mean)</span><span class="stat-value {% if r.expected_return[0] == '+' %}green{% else %}red{% endif %}">{{ r.expected_return }}</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Parameter Model (GBM)
+      </div>
+      <div class="stat-row"><span class="stat-label">μ Harian (Return Rata-rata)</span><span class="stat-value blue">{{ r.mu_daily }}</span></div>
+      <div class="stat-row"><span class="stat-label">σ Harian (Volatilitas)</span><span class="stat-value blue">{{ r.sigma_daily }}</span></div>
+      <div class="stat-row"><span class="stat-label">μ Tahunan (Disetahunkan)</span><span class="stat-value blue">{{ r.mu_annual }}</span></div>
+      <div class="stat-row"><span class="stat-label">σ Tahunan (Volatilitas)</span><span class="stat-value blue">{{ r.sigma_annual }}</span></div>
+      <div class="stat-row"><span class="stat-label">Data Return Historis</span><span class="stat-value">{{ r.trading_days }} observasi</span></div>
+      <div class="stat-row"><span class="stat-label">Periode Data</span><span class="stat-value">{{ r.years }} tahun</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Skenario Upside vs Downside
+      </div>
+      <div class="stat-row"><span class="stat-label">P95 — Skenario Terbaik 5%</span><span class="stat-value green">{{ r.q95_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">P75 — Kuartil Atas</span><span class="stat-value">{{ r.q75_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">P50 — Median</span><span class="stat-value">{{ r.median_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">P25 — Kuartil Bawah</span><span class="stat-value">{{ r.q25_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">P5 — Skenario Terburuk 5%</span><span class="stat-value red">{{ r.q5_price }}</span></div>
+      <div class="stat-row"><span class="stat-label">Potensi Upside (P95)</span><span class="stat-value green">{{ r.upside_pct }}</span></div>
+      <div class="stat-row"><span class="stat-label">Risiko Downside (P5)</span><span class="stat-value red">{{ r.downside_pct }}</span></div>
+    </div>
+  </div>
+
+  <!-- Interpretation Guide -->
   <div class="interp-card">
-    <h3>📝 Cara Membaca Hasil Ini</h3>
+    <div class="interp-title">Panduan Membaca Hasil Ini</div>
     <div class="interp-item">
-      <div class="interp-icon">📈</div>
-      <div class="interp-text">
-        <strong>Grafik Jalur Simulasi (kiri atas):</strong> Setiap garis tipis = 1 simulasi pergerakan harga selama {{ r.days }} hari. Area biru muda = 50% kemungkinan harga berada di sini. Area biru gelap = 90% kemungkinan. Garis <strong style="color:#22c55e;">hijau</strong> = P95 (skenario terbaik 5%). Garis <strong style="color:#ef4444;">merah</strong> = P5 (skenario terburuk 5%). Garis <strong style="color:#f59e0b;">kuning</strong> = rata-rata semua simulasi.
+      <div class="interp-icon-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="interp-body">
+        <strong>Grafik Jalur Simulasi (kiri atas):</strong> Setiap garis tipis mewakili satu skenario pergerakan harga
+        selama {{ r.days }} hari trading. Garis-garis ini bukan prediksi individual — melainkan representasi visual
+        dari distribusi kemungkinan. Area biru gelap = rentang 50% simulasi (P25–P75). Area biru terang = rentang 90% (P5–P95).
+        Garis hijau putus-putus = P95. Garis merah putus-putus = P5.
       </div>
     </div>
     <div class="interp-item">
-      <div class="interp-icon">📊</div>
-      <div class="interp-text">
-        <strong>Distribusi Harga Akhir (kiri bawah):</strong> Histogram menunjukkan seberapa sering setiap harga muncul di akhir {{ r.days }} hari. Kolom <strong style="color:#ef4444;">merah</strong> = zona risiko (5% simulasi terburuk, di bawah P5). Kolom <strong style="color:#22c55e;">hijau</strong> = zona upside (5% simulasi terbaik, di atas P95). Kolom <strong style="color:#4f9cf9;">biru</strong> = area normal (90% simulasi).
+      <div class="interp-icon-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <div class="interp-body">
+        <strong>Distribusi Harga Akhir (kiri bawah):</strong> Histogram menunjukkan seberapa sering setiap rentang harga
+        muncul di akhir {{ r.days }} hari pada seluruh simulasi. Kolom merah = 5% simulasi terburuk (di bawah P5).
+        Kolom biru = 90% area normal. Kolom hijau = 5% simulasi terbaik (di atas P95). Bentuk distribusi mengungkap
+        apakah terdapat asimetri risiko.
       </div>
     </div>
     <div class="interp-item">
-      <div class="interp-icon">⚠️</div>
-      <div class="interp-text">
-        <strong>Value at Risk (VaR) 95% = {{ r.var_95_abs }} ({{ r.var_95_pct }}):</strong>
-        Artinya, dengan keyakinan 95%, kerugian Anda dalam {{ r.days }} hari ke depan <em>tidak akan melebihi</em> angka ini. Ada 5% kemungkinan kerugian melebihi jumlah tersebut (skenario sangat ekstrem).
+      <div class="interp-icon-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      </div>
+      <div class="interp-body">
+        <strong>VaR 95% = {{ r.var_95_abs }} ({{ r.var_95_pct }}):</strong> Dengan keyakinan 95%, kerugian dalam
+        {{ r.days }} hari ke depan <em>tidak melebihi</em> angka ini — berdasarkan distribusi historis.
+        Masih ada <strong>5% kemungkinan kerugian melebihi angka ini</strong>. VaR bukan batas atas kerugian;
+        ia adalah ambang batas probabilistik. Dalam kejadian ekstrem, kerugian dapat jauh lebih besar.
       </div>
     </div>
     <div class="interp-item">
-      <div class="interp-icon">🎯</div>
-      <div class="interp-text">
-        <strong>Probabilitas Naik {{ r.prob_up }} / Turun {{ r.prob_down }}:</strong>
-        Dihitung dari berapa persen simulasi yang berakhir di atas / bawah harga sekarang ({{ r.last_price }}). Ini bukan jaminan — ini probabilitas berdasarkan pola historis.
+      <div class="interp-icon-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div class="interp-body">
+        <strong>Simulasi Monte Carlo adalah alat ukur risiko, bukan kristal pembaca masa depan.</strong>
+        Probabilitas naik {{ r.prob_up }} bukan berarti saham <em>pasti</em> naik. Ini artinya
+        {{ r.prob_up }} dari {{ r.simulations | int }} skenario acak yang dijalankan dengan parameter historis
+        berakhir di atas harga saat ini ({{ r.last_price }}). Parameter ini bisa berubah kapan saja seiring
+        kondisi makroekonomi, kebijakan perusahaan, atau sentimen pasar.
       </div>
     </div>
   </div>
 
   <!-- Disclaimer -->
-  <div class="disclaimer">
-    ⚠️ <strong>Disclaimer:</strong> Hasil simulasi ini adalah estimasi probabilistik berdasarkan data historis dan asumsi Geometric Brownian Motion (GBM). Model ini TIDAK memperhitungkan kejadian luar biasa (black swan), perubahan fundamental perusahaan, kebijakan moneter mendadak, atau sentimen pasar. Gunakan sebagai alat bantu analisis, BUKAN satu-satunya dasar keputusan investasi. Selalu lakukan analisis fundamental dan konsultasikan dengan profesional keuangan.
+  <div class="disclaimer-card">
+    <strong>Disclaimer Penting:</strong> Hasil simulasi ini adalah estimasi probabilistik berbasis data historis dan asumsi
+    model matematika. Tidak ada jaminan bahwa hasil yang diantisipasi akan terwujud, dan pergerakan aktual dapat menyimpang
+    secara signifikan dari proyeksi yang paling konservatif sekalipun. Simulasi Monte Carlo menyederhanakan model dengan
+    mengabaikan faktor eksternal yang tidak secara langsung terkait dengan pergerakan harga, termasuk tren makroekonomi,
+    kepemimpinan perusahaan, sentimen pasar, dan pengaruh siklus. Gunakan alat ini sebagai pelengkap analisis,
+    <strong>bukan satu-satunya dasar keputusan investasi.</strong> Selalu konsultasikan dengan profesional keuangan berlisensi.
+  </div>
+
+</div>
+
+<!-- Print Modal -->
+<div class="print-overlay" id="printOverlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="print-modal">
+    <h3>Cetak / Ekspor PDF</h3>
+    <p>Pilih format laporan yang ingin dicetak. Dokumen akan membuka dialog cetak browser yang dapat disimpan sebagai PDF.</p>
+    <div class="print-options">
+      <div class="print-option selected" id="opt-full" onclick="selectPrintOpt('full')">
+        <div class="po-title">Laporan Lengkap</div>
+        <div class="po-desc">Semua grafik, tabel statistik, panduan interpretasi, dan disclaimer.</div>
+      </div>
+      <div class="print-option" id="opt-summary" onclick="selectPrintOpt('summary')">
+        <div class="po-title">Ringkasan Eksekutif</div>
+        <div class="po-desc">KPI utama, chart, dan VaR saja — cocok untuk satu halaman.</div>
+      </div>
+    </div>
+    <div class="print-modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('printOverlay').classList.remove('open')">Batal</button>
+      <button class="modal-btn modal-btn-print" onclick="doPrint()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Cetak Sekarang
+      </button>
+    </div>
   </div>
 </div>
+
+<script>
+let printOpt = 'full';
+function selectPrintOpt(opt) {
+  printOpt = opt;
+  document.querySelectorAll('.print-option').forEach(el => el.classList.remove('selected'));
+  document.getElementById('opt-' + opt).classList.add('selected');
+}
+function doPrint(mode) {
+  // Sembunyikan overlay print jika ada
+  const printOverlay = document.getElementById('printOverlay');
+  if (printOverlay) {
+    printOverlay.classList.remove('open');
+  }
+  
+  // Simpan elemen-elemen yang akan disembunyikan
+  const interpCard = document.querySelector('.interp-card');
+  const statsLayout = document.querySelector('.stats-layout');
+  const bsInfoCard = document.querySelector('.bs-info-card');
+  
+  // Hanya sembunyikan jika mode 'summary'
+  if (mode === 'summary') {
+    // Sembunyikan elemen
+    if (interpCard) interpCard.style.display = 'none';
+    if (statsLayout) statsLayout.style.display = 'none';
+    if (bsInfoCard) bsInfoCard.style.display = 'none';
+  }
+  
+  // Tunggu sebentar agar perubahan style diterapkan
+  setTimeout(() => {
+    // Cetak halaman
+    window.print();
+    
+    // Kembalikan tampilan setelah print selesai
+    // Gunakan setTimeout lagi untuk memastikan print dialog sudah ditutup
+    setTimeout(() => {
+      if (interpCard) interpCard.style.display = '';
+      if (statsLayout) statsLayout.style.display = '';
+      if (bsInfoCard) bsInfoCard.style.display = '';
+    }, 500);
+  }, 200);
+}
+</script>
 </body>
 </html>

@@ -109,8 +109,15 @@ def calc_log_returns(prices):
 
 def run_monte_carlo(prices, days, simulations):
     returns = calc_log_returns(prices)
+    returns = returns.replace([np.inf, -np.inf], np.nan).dropna()
+    if len(returns) < 10:
+        raise ValueError("Data historis tidak cukup untuk menghitung return yang valid. Coba tambah periode historis.")
     mu_daily = float(returns.mean())
     sigma_daily = float(returns.std())
+    if not np.isfinite(mu_daily) or not np.isfinite(sigma_daily):
+        raise ValueError(f"Parameter model tidak valid (mu={mu_daily:.4f}, sigma={sigma_daily:.4f}). Data saham mungkin tidak lengkap atau tidak normal.")
+    if sigma_daily == 0:
+        raise ValueError("Volatilitas harga nol — saham mungkin tidak aktif diperdagangkan atau data tidak bervariasi.")
     mu_annual = mu_daily * TRADING_DAYS_PER_YEAR
     sigma_annual = sigma_daily * np.sqrt(TRADING_DAYS_PER_YEAR)
     mu_adj_annual = mu_annual - 0.5 * sigma_annual ** 2
@@ -121,8 +128,17 @@ def run_monte_carlo(prices, days, simulations):
     epsilon = np.random.standard_normal((simulations, days))
     daily_log_ret = mu_adj_daily + sigma_daily * epsilon
     log_paths = np.cumsum(daily_log_ret, axis=1)
+    log_paths = np.clip(log_paths, -50, 50)  # prevent overflow (e^50 ≈ 5e21 is already extreme)
     price_paths = last_price * np.exp(log_paths)
     final_prices = price_paths[:, -1]
+
+    # Remove any NaN/inf that slipped through
+    valid_mask = np.isfinite(final_prices)
+    if valid_mask.sum() < 10:
+        raise ValueError("Terlalu banyak simulasi menghasilkan harga tidak valid (NaN/inf). Periksa data saham.")
+    if not valid_mask.all():
+        final_prices = final_prices[valid_mask]
+        price_paths = price_paths[valid_mask]
 
     if len(np.unique(final_prices)) == 1:
         # All simulations produced identical results - add small noise
@@ -196,8 +212,15 @@ def run_black_swan(prices, days, simulations, jump_intensity=2.0, jump_mean=-0.1
     - jump_std: std of jump size distribution
     """
     returns = calc_log_returns(prices)
+    returns = returns.replace([np.inf, -np.inf], np.nan).dropna()
+    if len(returns) < 10:
+        raise ValueError("Data historis tidak cukup untuk menghitung return yang valid.")
     mu_daily = float(returns.mean())
     sigma_daily = float(returns.std())
+    if not np.isfinite(mu_daily) or not np.isfinite(sigma_daily):
+        raise ValueError(f"Parameter model tidak valid (mu={mu_daily:.4f}, sigma={sigma_daily:.4f}). Data saham mungkin tidak lengkap.")
+    if sigma_daily == 0:
+        raise ValueError("Volatilitas harga nol — saham mungkin tidak aktif diperdagangkan atau data tidak bervariasi.")
 
     # Annualize
     mu_annual = mu_daily * TRADING_DAYS_PER_YEAR
@@ -231,8 +254,17 @@ def run_black_swan(prices, days, simulations, jump_intensity=2.0, jump_mean=-0.1
     # Daily log returns with jumps
     daily_log_ret = mu_adj_daily + sigma_daily * epsilon + jump_sizes
     log_paths = np.cumsum(daily_log_ret, axis=1)
+    log_paths = np.clip(log_paths, -50, 50)  # prevent overflow
     price_paths = last_price * np.exp(log_paths)
     final_prices = price_paths[:, -1]
+
+    # Remove any NaN/inf that slipped through
+    valid_mask = np.isfinite(final_prices)
+    if valid_mask.sum() < 10:
+        raise ValueError("Terlalu banyak simulasi menghasilkan harga tidak valid (NaN/inf). Periksa data saham.")
+    if not valid_mask.all():
+        final_prices = final_prices[valid_mask]
+        price_paths = price_paths[valid_mask]
 
     stats = {
         'last_price': last_price,
@@ -311,234 +343,10 @@ def make_chart(price_paths, stats, paths_display, ticker, days, simulations, mod
 
     last_price = stats['last_price']
     final_prices = np.array(paths_display['final_prices'])
-    dr = np.arange(1, days + 1)
-    p5 = np.array(paths_display['p5'])
-    p25 = np.array(paths_display['p25'])
-    p75 = np.array(paths_display['p75'])
-    p95 = np.array(paths_display['p95'])
-    mean_p = np.array(paths_display['mean'])
-    pfmt = 'Rp{:,.0f}' if is_indonesian(ticker) else '${:,.2f}'
-
-    fig = plt.figure(figsize=(22, 14), facecolor=P['bg'])
-    fig.patch.set_linewidth(0)
-
-    gs = gridspec.GridSpec(2, 3, figure=fig, hspace=0.42, wspace=0.30,
-                           left=0.05, right=0.97, top=0.90, bottom=0.07)
-
-    def style_ax(ax, grid_axis='both'):
-        ax.set_facecolor(P['surface'])
-        for spine in ax.spines.values():
-            spine.set_color(P['border'])
-            spine.set_linewidth(0.8)
-        ax.tick_params(colors=P['slate'], labelsize=8.5, length=3)
-        ax.grid(True, color=P['border'], lw=0.6, alpha=0.8, axis=grid_axis)
-        ax.set_axisbelow(True)
-
-    # ── 1. Price Paths ──
-    ax1 = fig.add_subplot(gs[0, :2])
-    style_ax(ax1)
-
-    sample = np.array(paths_display['sample_paths'])
-    for path in sample[:50]:
-        ax1.plot(dr, path, color=accent, alpha=0.06, linewidth=0.6)
-
-    ax1.fill_between(dr, p5, p95, color=accent, alpha=0.07, label='_nolegend_')
-    ax1.fill_between(dr, p25, p75, color=accent, alpha=0.14, label='_nolegend_')
-
-    ax1.plot(dr, p95, color=P['green'], lw=1.8, ls='--',
-             label=f'P95 (Skenario Terbaik): {pfmt.format(p95[-1])}')
-    ax1.plot(dr, mean_p, color=accent, lw=2.4,
-             label=f'Rata-rata: {pfmt.format(mean_p[-1])}')
-    ax1.plot(dr, p5, color=P['red'], lw=1.8, ls='--',
-             label=f'P5 (Skenario Terburuk): {pfmt.format(p5[-1])}')
-    ax1.axhline(last_price, color=P['dark'], lw=1.4, ls=':', alpha=0.5,
-                label=f'Harga Saat Ini: {pfmt.format(last_price)}')
-
-    title_prefix = 'Black Swan (Jump Diffusion)' if is_bs else 'Geometric Brownian Motion'
-    ax1.set_title(f'Jalur Simulasi {title_prefix} — {ticker}',
-                  color=P['dark'], fontsize=11.5, fontweight='700', pad=12, loc='left')
-    ax1.set_xlabel('Hari Trading ke Depan', color=P['slate'], fontsize=9)
-    ax1.set_ylabel('Harga', color=P['slate'], fontsize=9)
-
-    legend = ax1.legend(fontsize=8, loc='upper left', framealpha=1,
-                        facecolor=P['surface'], edgecolor=P['border'],
-                        labelcolor=P['mid'])
-    legend.get_frame().set_linewidth(0.8)
-
-    # Annotation band labels
-    ax1.text(dr[-1]*0.97, p95[-1], '90%', color=P['slate'], fontsize=7,
-             va='center', ha='right', alpha=0.7)
-
-    # ── 2. Probability Donut ──
-    ax2 = fig.add_subplot(gs[0, 2])
-    ax2.set_facecolor(P['surface'])
-    ax2.set_aspect('equal')
-    for s in ax2.spines.values(): s.set_visible(False)
-
-    colors_pie = [P['green'] if stats['prob_up'] > 50 else P['red'],
-                  P['red'] if stats['prob_up'] > 50 else P['green']]
-    # Swap so that "up" is always green
-    colors_pie = [P['green'], P['red']]
-
-    wedges, _ = ax2.pie(
-        [stats['prob_up'], stats['prob_down']],
-        colors=colors_pie, startangle=90, counterclock=False,
-        wedgeprops=dict(width=0.55, edgecolor=P['bg'], linewidth=3)
-    )
-
-    # Center text
-    ax2.text(0, 0.18, f"{stats['prob_up']:.1f}%", ha='center', va='center',
-             color=P['green'] if stats['prob_up'] > 50 else P['red'],
-             fontsize=22, fontweight='800')
-    ax2.text(0, -0.10, 'Probabilitas Naik', ha='center', va='center',
-             color=P['mid'], fontsize=9, fontweight='600')
-    ax2.text(0, -0.38, f"{stats['prob_down']:.1f}% Probabilitas Turun",
-             ha='center', color=P['red'], fontsize=8.5)
-
-    ax2.set_title('Distribusi Probabilitas', color=P['dark'], fontsize=11,
-                  fontweight='700', pad=12)
-    ax2.text(0, -0.65,
-             f"Berdasarkan {simulations:,} simulasi independen\n"
-             f"Persentase simulasi yang berakhir di atas\nharga saat ini ({pfmt.format(last_price)})",
-             ha='center', color=P['slate'], fontsize=7.5, linespacing=1.5)
-
-    # ── 3. Final Price Distribution ──
-    ax3 = fig.add_subplot(gs[1, :2])
-    style_ax(ax3, 'y')
-
-    q5v, q95v = stats['q5'], stats['q95']
-    n_bins = min(70, max(25, simulations // 12))
-    counts, bins = np.histogram(final_prices, bins=n_bins)
-    bin_width = (bins[1] - bins[0]) * 0.88
-
-    for i in range(len(bins)-1):
-        mid = (bins[i] + bins[i+1]) / 2
-        if mid < q5v:
-            c = P['red']
-            alpha = 0.75
-        elif mid > q95v:
-            c = P['green']
-            alpha = 0.75
-        else:
-            c = accent
-            alpha = 0.55
-        ax3.bar(mid, counts[i], width=bin_width, color=c, alpha=alpha, edgecolor='none')
-
-    ax3.axvline(last_price, color=P['dark'], lw=2, ls=':', alpha=0.6,
-                label='Harga Saat Ini')
-    ax3.axvline(stats['mean'], color=accent, lw=2, ls='--',
-                label=f"Rata-rata: {pfmt.format(stats['mean'])}")
-    ax3.axvline(q5v, color=P['red'], lw=1.8, ls='-.',
-                label=f"P5 / VaR 95%: {pfmt.format(q5v)}")
-    ax3.axvline(q95v, color=P['green'], lw=1.8, ls='-.',
-                label=f"P95 / Upside: {pfmt.format(q95v)}")
-
-    ax3.axvspan(final_prices.min(), q5v, color=P['red'], alpha=0.05)
-    ax3.axvspan(q95v, final_prices.max(), color=P['green'], alpha=0.05)
-
-    ax3.set_title(f'Distribusi Harga Akhir setelah {days} Hari Trading',
-                  color=P['dark'], fontsize=11.5, fontweight='700', pad=12, loc='left')
-    ax3.set_xlabel('Harga Prediksi', color=P['slate'], fontsize=9)
-    ax3.set_ylabel('Frekuensi Simulasi', color=P['slate'], fontsize=9)
-    legend3 = ax3.legend(fontsize=8, loc='upper right', framealpha=1,
-                         facecolor=P['surface'], edgecolor=P['border'], labelcolor=P['mid'])
-    legend3.get_frame().set_linewidth(0.8)
-
-    # Zone labels
-    y_top = ax3.get_ylim()[1]
-    ax3.text((final_prices.min() + q5v)/2, y_top*0.88, 'Zona\nRisiko',
-             ha='center', color=P['red'], fontsize=7.5, fontweight='600', alpha=0.8)
-    ax3.text((q95v + final_prices.max())/2, y_top*0.88, 'Zona\nUpside',
-             ha='center', color=P['green'], fontsize=7.5, fontweight='600', alpha=0.8)
-
-    # ── 4. Risk Summary Panel ──
-    ax4 = fig.add_subplot(gs[1, 2])
-    ax4.set_facecolor(P['surface'])
-    ax4.axis('off')
-    for s in ax4.spines.values(): s.set_visible(False)
-
-    ax4.set_xlim(0, 1)
-    ax4.set_ylim(0, 1)
-
-    rows = [
-        ('HARGA & PROYEKSI', None, P['slate'], 'header'),
-        ('Harga Saat Ini', pfmt.format(last_price), P['dark'], 'row'),
-        ('Proyeksi Rata-rata', pfmt.format(stats['mean']), accent, 'row'),
-        ('Median Proyeksi', pfmt.format(stats['median']), P['mid'], 'row'),
-        ('Expected Return', f"{(stats['mean']/last_price-1)*100:+.1f}%", P['green'] if stats['mean']>last_price else P['red'], 'row'),
-        (None, None, None, 'spacer'),
-        ('ANALISIS RISIKO (VaR)', None, P['slate'], 'header'),
-        ('P5 — Terburuk 5%', pfmt.format(q5v), P['red'], 'row'),
-        ('VaR 95% (Nominal)', pfmt.format(stats['var_95_abs']), P['red'], 'row'),
-        ('VaR 95% (%)', f"-{stats['var_95_pct']:.1f}%", P['red'], 'row'),
-        ('VaR 99% (%)', f"-{stats['var_99_pct']:.1f}%", P['red'], 'row'),
-        (None, None, None, 'spacer'),
-        ('SKENARIO UPSIDE', None, P['slate'], 'header'),
-        ('P95 — Terbaik 5%', pfmt.format(q95v), P['green'], 'row'),
-        ('Potensi Upside', f"+{(q95v/last_price-1)*100:.1f}%", P['green'], 'row'),
-        (None, None, None, 'spacer'),
-        ('PARAMETER MODEL', None, P['slate'], 'header'),
-        ('μ Tahunan', f"{stats['mu_annual']*100:.2f}%", accent, 'row'),
-        ('σ Tahunan (Volatilitas)', f"{stats['sigma_annual']*100:.2f}%", accent, 'row'),
-        ('Data Historis', f"{stats['n_returns']} hari rtn", P['mid'], 'row'),
-    ]
-
-    if is_bs:
-        rows.extend([
-            (None, None, None, 'spacer'),
-            ('PARAMETER BLACK SWAN', None, P['red'], 'header'),
-            ('Intensitas Lompatan (λ)', f"{stats.get('jump_intensity', 2):.1f}×/tahun", P['red'], 'row'),
-            ('Sim. dgn Jump', f"{stats.get('pct_with_jumps', 0):.1f}%", P['red'], 'row'),
-        ])
-
-    y = 0.98
-    for label, value, color, kind in rows:
-        if kind == 'spacer':
-            y -= 0.02
-            continue
-        if kind == 'header':
-            ax4.text(0.02, y, label, color=color, fontsize=7.5, fontweight='700',
-                     transform=ax4.transAxes, va='top', alpha=0.7)
-            ax4.plot([0.02, 0.98], [y - 0.018, y - 0.018], color=P['border'],
-                     lw=0.8, transform=ax4.transAxes)
-            y -= 0.048
-        else:
-            ax4.text(0.02, y, label, color=P['slate'], fontsize=7.8,
-                     transform=ax4.transAxes, va='top')
-            ax4.text(0.98, y, value, color=color, fontsize=7.8, fontweight='600',
-                     transform=ax4.transAxes, va='top', ha='right')
-            y -= 0.043
-
-    ax4.set_title('Ringkasan Statistik', color=P['dark'], fontsize=11,
-                  fontweight='700', pad=12)
-
-    # ── Super title ──
-    mode_label = '+ Black Swan (Jump Diffusion)' if is_bs else '— Geometric Brownian Motion'
-    fig.text(0.5, 0.955, f'Simulasi Monte Carlo {mode_label}',
-             ha='center', color=P['dark'], fontsize=14, fontweight='800')
-    fig.text(0.5, 0.940,
-             f'{ticker}  ·  {stats["n_returns"]} hari data historis  ·  {simulations:,} simulasi  ·  horizon {days} hari trading',
-             ha='center', color=P['slate'], fontsize=9)
-
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png', dpi=140, bbox_inches='tight',
-                facecolor=P['bg'], edgecolor='none')
-    buf.seek(0)
-    url = base64.b64encode(buf.getvalue()).decode()
-    plt.close()
-    return url
-
-def make_chart(price_paths, stats, paths_display, ticker, days, simulations, mode='standard'):
-    P = PALETTE
-    is_bs = (mode == 'blackswan')
-
-    accent = P['red'] if is_bs else P['blue']
-    accent_light = P['red_light'] if is_bs else P['blue_light']
-
-    last_price = stats['last_price']
-    final_prices = np.array(paths_display['final_prices'])
-    
-    # Validate probability values - prevent NaN
+    # Sanitize: remove NaN/inf before any plotting
+    final_prices = final_prices[np.isfinite(final_prices)]
+    if len(final_prices) == 0:
+        raise ValueError("Tidak ada harga akhir yang valid untuk divisualisasikan.")
     prob_up = stats.get('prob_up', 50.0)
     if np.isnan(prob_up) or not np.isfinite(prob_up):
         prob_up = 50.0

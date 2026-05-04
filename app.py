@@ -82,7 +82,28 @@ def get_stock_data(ticker, years_history):
         hist = stock.history(start=start_date, end=end_date)
         if len(hist) < 30:
             return None, "Data saham tidak ditemukan atau terlalu sedikit."
+
         prices = hist['Close']
+
+        # Clean: remove NaN, zero, and non-finite prices
+        # (yfinance can return these for delisted/suspended/data-gap rows)
+        prices = prices.replace(0, np.nan)
+        prices = prices[np.isfinite(prices) & prices.notna()]
+
+        if len(prices) < 30:
+            return None, (
+                "Data harga setelah pembersihan terlalu sedikit (< 30 hari). "
+                "Saham mungkin tidak aktif atau memiliki banyak data yang hilang."
+            )
+
+        # Validate the last price — it seeds every simulation path
+        last_price = float(prices.iloc[-1])
+        if not np.isfinite(last_price) or last_price <= 0:
+            return None, (
+                f"Harga terakhir tidak valid ({last_price}). "
+                "Saham mungkin di-suspend atau data tidak tersedia."
+            )
+
         info = {}
         try:
             info = stock.info
@@ -92,7 +113,7 @@ def get_stock_data(ticker, years_history):
             'prices': prices,
             'company_name': info.get('longName', info.get('shortName', ticker)),
             'sector': info.get('sector', '-'),
-            'current_price': float(prices.iloc[-1]),
+            'current_price': last_price,
             'start_date': prices.index[0].strftime('%d %b %Y'),
             'end_date': prices.index[-1].strftime('%d %b %Y'),
             'trading_days': len(prices),
@@ -105,7 +126,10 @@ def get_stock_data(ticker, years_history):
 # ============================================
 
 def calc_log_returns(prices):
-    return np.log(prices / prices.shift(1)).dropna()
+    lr = np.log(prices / prices.shift(1))
+    # Drop NaN and ±inf (occur when price is 0 or missing)
+    lr = lr.replace([np.inf, -np.inf], np.nan).dropna()
+    return lr
 
 def run_monte_carlo(prices, days, simulations):
     returns = calc_log_returns(prices)
@@ -132,13 +156,21 @@ def run_monte_carlo(prices, days, simulations):
     price_paths = last_price * np.exp(log_paths)
     final_prices = price_paths[:, -1]
 
-    # Remove any NaN/inf that slipped through
+    # Remove any NaN/inf that slipped through (safety net — should be rare after
+    # upstream cleaning, but guards against extreme edge-cases like last_price=NaN)
     valid_mask = np.isfinite(final_prices)
-    if valid_mask.sum() < 10:
-        raise ValueError("Terlalu banyak simulasi menghasilkan harga tidak valid (NaN/inf). Periksa data saham.")
-    if not valid_mask.all():
+    n_invalid = (~valid_mask).sum()
+    if n_invalid > 0:
+        pct_invalid = n_invalid / len(final_prices) * 100
+        if pct_invalid > 50:
+            raise ValueError(
+                f"{pct_invalid:.0f}% simulasi menghasilkan harga tidak valid. "
+                "Kemungkinan harga terakhir atau parameter model tidak valid. "
+                "Coba ticker lain atau kurangi periode prediksi."
+            )
+        # Trim the invalid minority and continue
         final_prices = final_prices[valid_mask]
-        price_paths = price_paths[valid_mask]
+        price_paths  = price_paths[valid_mask]
 
     if len(np.unique(final_prices)) == 1:
         # All simulations produced identical results - add small noise
@@ -258,13 +290,21 @@ def run_black_swan(prices, days, simulations, jump_intensity=2.0, jump_mean=-0.1
     price_paths = last_price * np.exp(log_paths)
     final_prices = price_paths[:, -1]
 
-    # Remove any NaN/inf that slipped through
+    # Remove any NaN/inf that slipped through (safety net — should be rare after
+    # upstream cleaning, but guards against extreme edge-cases like last_price=NaN)
     valid_mask = np.isfinite(final_prices)
-    if valid_mask.sum() < 10:
-        raise ValueError("Terlalu banyak simulasi menghasilkan harga tidak valid (NaN/inf). Periksa data saham.")
-    if not valid_mask.all():
+    n_invalid = (~valid_mask).sum()
+    if n_invalid > 0:
+        pct_invalid = n_invalid / len(final_prices) * 100
+        if pct_invalid > 50:
+            raise ValueError(
+                f"{pct_invalid:.0f}% simulasi menghasilkan harga tidak valid. "
+                "Kemungkinan harga terakhir atau parameter model tidak valid. "
+                "Coba ticker lain atau kurangi periode prediksi."
+            )
+        # Trim the invalid minority and continue
         final_prices = final_prices[valid_mask]
-        price_paths = price_paths[valid_mask]
+        price_paths  = price_paths[valid_mask]
 
     stats = {
         'last_price': last_price,
